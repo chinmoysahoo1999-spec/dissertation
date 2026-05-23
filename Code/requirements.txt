@@ -1,0 +1,30 @@
+# =============================================================================
+# Runtime dependencies for the MIND-style hallucination detection pipeline.
+#
+# Tested on free Colab / Kaggle GPU notebooks (Python 3.10).
+# Versions are loose lower bounds so Colab's pre-installed wheels can be reused
+# whenever possible. Pin tighter if you need bit-exact reproducibility.
+# =============================================================================
+
+# Core deep learning
+torch>=2.1
+transformers>=4.41
+accelerate>=0.30
+bitsandbytes>=0.46.1            # 4-bit NF4 quantization
+
+# Datasets
+datasets>=2.18
+
+# NLP
+spacy>=3.7
+nltk>=3.8
+# The spaCy model itself is installed separately:
+#   python -m spacy download en_core_web_sm
+
+# Metrics & utilities
+scikit-learn>=1.3
+numpy>=1.26
+tqdm>=4.66
+
+# Development / tests (CPU-friendly)
+pytest>=8.0
