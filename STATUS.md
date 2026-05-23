@@ -167,14 +167,44 @@ Code changes (Issue #1–#4 above) are deferred to **Session 1 of PLAN.md**, whi
 
 ---
 
-## 9. Reference papers in repo
+## 9. Results log
+
+Each time `project.ipynb` finishes running on Kaggle, it now writes two summary files (Block 11 of the notebook):
+
+- `results_summary.json` — machine-readable; paste back to the assistant for verification.
+- `results_summary.md` — human-readable; can be downloaded from Kaggle's "Output" tab.
+
+Both files appear in `/kaggle/working/`. The notebook also prints a copy-paste-ready JSON block at the very end of the run so you can copy directly from the notebook output.
+
+### Run history
+
+| # | Date (UTC) | Host | Model | Samples | AUC-ROC | F1 | Acc | Notes |
+|---|---|---|---|---|---|---|---|---|
+| — | _pending_ | — | — | — | — | — | — | first Kaggle run to be appended here |
+
+After each run, copy the row from `results_summary.md` and paste it under "Run history". Keep the most recent run at th "Run history". Keep the most recent run at the bottom.
+
+### Latest results JSON (paste-area)
+
+```
+[paste the most recent results_summary.json contents here]
+```
+
+---
+
+## 10. Reference papers in repo
 
 (unchanged from prior STATUS; the relevant additions for this dissertation's specific contribution are the mid-eval PDF, MIND paper, HalluShift thesis, and SelfCheckGPT)
 
 | File | Role |
 |---|---|
-| `mid_evl (3) (4).pdf` | The student's own mid-evaluation slides (Feb 2026). The single most important file for understanding what's been done and what remains. |
+| `mid_evl (3) (4).pdf` | The student's own mid-evaluation slides (Feb 2026). Single most important file for understanding what's done and what remains. |
 | `hallucination_detection using unsupervised method.pdf` | MIND (Su et al., Findings of ACL 2024). The methodology backbone. |
-| `M.tech _Sharanya_Dasgupta_CS2320.pdf` | HalluShift (Dasgupta, ISI 2025). The adjacent prior work that the originality-differentiation in §4 above is built against. |
-| `NeurIPS-2024-haloscope-*.pdf` | HaloScope (Du et al., NeurIPS 2024). Sister method, evaluated on the same 4-QA suite. |
-| `selfcheckgpt.pdf` |
+| `M.tech _Sharanya_Dasgupta_CS2320.pdf` | HalluShift (Dasgupta, ISI 2025). Adjacent prior work; originality-differentiation built against. |
+| `NeurIPS-2024-haloscope-*.pdf` | HaloScope (Du et al., NeurIPS 2024). Sister method, same 4-QA suite. |
+| `selfcheckgpt.pdf` | SelfCheckGPT (Manakul et al., EMNLP 2023). Sampling-based baseline. |
+| `The internal state of LLM know when it laying(2023).pdf` | SAPLMA (Azaria & Mitchell, 2023). MIND's direct precursor. |
+| `LM know what they know.pdf` | Kadavath et al., 2022. Calibration / self-knowledge. |
+| `Survey of hallucination in natural language generation.pdf` | Ji et al. survey (3 copies in repo — same paper). |
+| `2024.fever-1.5.pdf`, `2024.fever-1.5-summary.pdf` | Student's own prior FEVER work. |
+| `Notes On Lexical (n-gram) Metrics For Hallucination Detection.pdf` | Pedagogical reference. |
