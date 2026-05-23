@@ -9,7 +9,7 @@ _Mid-evaluation completed: 2026-02-13. Supervisor: Prof. Ujjwal Bhattacharya, IS
 
 **Hallucination Detection in Large Language Models Using Internal Representations.**
 
-Concretely: extend the MIND framework (Su et al., Findings of ACL 2024) by augmenting the canonical last-token / last-layer hidden state with three categories of additional signals derived from the same forward pass — (i) layer-wise representation drift, (ii) cross-layer variance, (iii) predictive entropy — and evaluate across 2 LLMs (Qwen2.5-3B, TinyLlama-1.1B) and 7 hallucination-detection benchmarks (4-QA suite + HaluEval triple). Scale-up to Llama-2-7B and GPT-J-6B is **deferred** (kept in PLAN.md §3 as future work).
+Concretely: extend the MIND framework (Su et al., Findings of ACL 2024) by augmenting the canonical last-token / last-layer hidden state with three categories of additional signals derived from the same forward pass — (i) layer-wise representation drift, (ii) cross-layer variance, (iii) predictive entropy — and evaluate across **4 LLMs** (TinyLlama-1.1B, Qwen2.5-3B, GPT-J-6B, Llama-2-7B) and 7 hallucination-detection benchmarks (4-QA suite + HaluEval triple). The 7B / 6B models are tractable on Kaggle Free T4×2 (32 GB total VRAM in bf16) without int8 quantisation — see PLAN.md §1.
 
 ---
 
@@ -144,12 +144,14 @@ E:\Dessertation\
 
 **Fallback**: Colab Free with single T4 (16 GB), ~12 h soft cap with frequent disconnects.
 
-Memory budget analysis: see `PLAN.md §1` for the full table. Headline for current scope (Qwen-3B + TinyLlama):
-- Qwen2.5-3B fits in bf16 with ~10 GB headroom on a single T4.
-- TinyLlama-1.1B fits comfortably in bf16.
-- HaluEval-Summarisation truncated to 1024 tokens to avoid OOM on long contexts.
+Memory budget headline (full 4-model sweep, all in bf16 on Kaggle T4×2):
+- TinyLlama-1.1B: 2 GB — trivial.
+- Qwen2.5-3B: 6 GB — comfortable on single GPU.
+- GPT-J-6B: 12 GB — fits on one T4, leaves the other free for activation/KV-cache.
+- Llama-2-7B: 14 GB — fits on one T4 with `device_map="auto"`; OR can split across both GPUs.
+- HaluEval-Summarisation prompts truncated to 1024 tokens to avoid OOM on long contexts.
 
-If the deferred Llama-2-7B / GPT-J-6B work is re-opened later, **Kaggle T4×2 fits both in bf16** without needing int8 (an advantage over Colab Free); see PLAN.md §3.
+Total Kaggle GPU budget for the full plan: ~39 hours (~1.3 weeks of the 30 h / week quota). See PLAN.md §5.
 
 ---
 
@@ -175,5 +177,4 @@ Code changes (Issue #1–#4 above) are deferred to **Session 1 of PLAN.md**, whi
 | `hallucination_detection using unsupervised method.pdf` | MIND (Su et al., Findings of ACL 2024). The methodology backbone. |
 | `M.tech _Sharanya_Dasgupta_CS2320.pdf` | HalluShift (Dasgupta, ISI 2025). The adjacent prior work that the originality-differentiation in §4 above is built against. |
 | `NeurIPS-2024-haloscope-*.pdf` | HaloScope (Du et al., NeurIPS 2024). Sister method, evaluated on the same 4-QA suite. |
-| `selfcheckgpt.pdf` | SelfCheckGPT (Manakul et al., EMNLP 2023). Sampling-based baseline. |
-| `The internal state of LLM know when it laying(2023).pdf` | SAP
+| `selfcheckgpt.pdf` |
