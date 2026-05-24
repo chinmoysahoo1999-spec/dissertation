@@ -32,13 +32,26 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-# Five model targets — all non-gated, all used in MIND / HaloScope / HalluShift literature.
+# Seven model targets — all non-gated, all used in MIND / HaloScope / HalluShift / SAPLMA literature.
+#
+# Colab Free (single T4, 16 GB):
+#   tinyllama_1.1b   — mid-eval baseline (Llama family)
+#   qwen2.5_3b       — mid-eval baseline (Qwen family)
+#   opt_2.7b         — small OPT, used in MIND/HaloScope/HalluShift/SAPLMA
+#   gptj_6b          — used in MIND (12 GB bf16, tight on 16 GB T4)
+#
+# Kaggle Free (T4 x 2, 32 GB total via device_map='auto'):
+#   qwen2.5_7b       — used in HalluShift, headline scale-up
+#   opt_6.7b         — used in MIND/HaloScope/HalluShift/SAPLMA (4-paper baseline)
+#   falcon_7b        — Falcon family from MIND paper (MIND uses Falcon-40B; 7B is the free sibling)
 MODELS = [
     ("tinyllama_1.1b",   "TinyLlama/TinyLlama-1.1B-Chat-v1.0",  "colab",  1000),
     ("qwen2.5_3b",       "Qwen/Qwen2.5-3B",                     "colab",  1000),
     ("opt_2.7b",         "facebook/opt-2.7b",                   "colab",  1000),
     ("gptj_6b",          "EleutherAI/gpt-j-6b",                 "colab",   600),  # heavier; smaller N
     ("qwen2.5_7b",       "Qwen/Qwen2.5-7B-Instruct",            "kaggle", 1000),
+    ("opt_6.7b",         "facebook/opt-6.7b",                   "kaggle", 1000),
+    ("falcon_7b",        "tiiuae/falcon-7b",                    "kaggle", 1000),
 ]
 
 
