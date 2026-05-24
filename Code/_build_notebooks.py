@@ -138,11 +138,11 @@ if torch.cuda.is_available():
 # Tokeniser + model
 # -----------------------------------------------------------------------------
 print(f"\\nLoading {MODEL_NAME} (4bit={USE_4BIT}, dtype={DTYPE}) ...")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=False)
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-load_kwargs = dict(trust_remote_code=True, torch_dtype=DTYPE,
+load_kwargs = dict(trust_remote_code=False, torch_dtype=DTYPE,
                    device_map="auto" if torch.cuda.is_available() else None)
 if USE_4BIT and torch.cuda.is_available():
     load_kwargs["quantization_config"] = BitsAndBytesConfig(
@@ -916,4 +916,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main
