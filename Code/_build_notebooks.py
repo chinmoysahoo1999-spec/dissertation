@@ -311,13 +311,23 @@ def per_step_entropy(scores):
 
 
 def generate_sample(text, entity, idx, title):
+    # Guard against OPT/GPT-J/Llama2 max_position_embeddings overflow.
+    # If the prefix + windowed continuation + suffix would exceed the model's
+    # positional window, skip the article — otherwise CUDA gather will assert.
+    MAX_POS = getattr(model.config, "max_position_embeddings", 4096)
+    HEADROOM = WINDOWS + 64
     enc = tokenizer(text[:idx].strip(), return_tensors="pt").to(model.device)
     input_ids = enc["input_ids"]; attn = enc["attention_mask"]
+    if input_ids.shape[1] + HEADROOM >= MAX_POS:
+        return None
     input_id_list = input_ids.tolist()
     toks = find_first_and_next_token(text, entity, idx, input_id_list)
     if not toks:
         return None
     first_, next_, entity_len, last_id = toks
+    # Also guard the suffix length
+    if input_ids.shape[1] + entity_len + len(last_id) + HEADROOM >= MAX_POS:
+        return None
 
     gen = model.generate(input_ids, attention_mask=attn,
                          max_new_tokens=entity_len + WINDOWS,
@@ -901,19 +911,4 @@ def write_notebook(path, cells):
 
 def main():
     base = build_cells()
-    for tag, model_name, env, n_samples in MODELS:
-        nb_name = f"project_{tag}"
-        mapping = {
-            "__MODEL_NAME__":   model_name,
-            "__MODEL_TAG__":    tag,
-            "__TARGET_SAMPLES__": n_samples,
-            "__TARGET_ENV__":   "Kaggle Free (T4×2 bf16)" if env == "kaggle"
-                                 else "Colab Free (T4 bf16)",
-            "__NOTEBOOK_NAME__": nb_name,
-        }
-        cells = substitute(base, mapping)
-        write_notebook(HERE / f"{nb_name}.ipynb", cells)
-
-
-if __name__ == "__main__":
-    main
+    for tag, model_name, env, n_
