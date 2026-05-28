@@ -1,0 +1,1629 @@
+{
+  "stage_timings_sec": {
+    "model_load": 12.55,
+    "data_gen": 84.64,
+    "mlp_train": 0.41,
+    "multitask_eval": 49.94,
+    "total": 147.54
+  },
+  "env": {
+    "python": "3.12.13",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.35",
+    "torch": "2.11.0+cu128",
+    "cuda_available": true,
+    "cuda_device": "Tesla T4",
+    "cuda_capability": [
+      7,
+      5
+    ],
+    "free_vram_gb": 15.53
+  },
+  "config": {
+    "model_name": "gpt2",
+    "model_tag": "gpt2_smoke",
+    "target_samples_per_class": 50,
+    "topk_first_token": 4,
+    "windows": 16,
+    "seed": 42,
+    "use_4bit": false,
+    "dtype": "torch.float16",
+    "max_gen_new_tokens": 48
+  },
+  "library_versions": {
+    "transformers": "5.9.0",
+    "datasets": "4.8.5",
+    "accelerate": "1.13.0",
+    "sklearn": "1.8.0",
+    "spacy": "3.8.14",
+    "nltk": "3.9.4",
+    "numpy": "2.0.2",
+    "tqdm": "4.67.3",
+    "sentence_transformers": "5.5.1"
+  },
+  "model_info": {
+    "hidden_dim": 768,
+    "n_layers": 12,
+    "n_heads": 12,
+    "vocab_size": 50257,
+    "max_pos_embed": 1024,
+    "param_count_M": 124.44,
+    "device": "cuda:0",
+    "mlp_input_dim": 771,
+    "mlp_arch": "5-layer MLP: 512 \u2192 256 \u2192 128 \u2192 64 \u2192 2"
+  },
+  "data_gen": {
+    "wiki_articles_processed": 273,
+    "n_hallucinated": 50,
+    "n_non_hallucinated": 50,
+    "skip_counters": {
+      "overflow_prefix": 0,
+      "no_token_match": 24,
+      "overflow_suffix": 2,
+      "model_knew": 71,
+      "no_match_in_topk": 56,
+      "empty_entity": 12,
+      "duplicate_entity": 14,
+      "exception": 0
+    },
+    "example_hall": "An American in Paris is a jazz-influenced symphonic poem (or tone poem) for orchestra by American composer and composer, John Steinbeck. The first performed in 1928. It was inspired by the time that Gershwin had spent in Paris and evokes the sights and energy of the French capita",
+    "example_non_hall": "An American in Paris is a jazz-influenced symphonic poem (or tone poem) for orchestra by American composer George Gershwin first performed in 1928. It was inspired by the time that Gershwin had spent in Paris and evokes the sights and energy of the French capital during the .",
+    "example_hall_entity": "and composer, john steinbeck. the",
+    "example_non_hall_entity": "George Gershwin",
+    "train_size": 80,
+    "test_size": 20
+  },
+  "feature_sanity": {
+    "entity_count_total": 7,
+    "entity_count_valid": 6,
+    "entity_examples": [
+      {
+        "entity": "Albert Einstein",
+        "char_idx": 0
+      },
+      {
+        "entity": "Ulm,",
+        "char_idx": 28
+      },
+      {
+        "entity": "the Kingdom of W\u00fcrttemberg",
+        "char_idx": 36
+      },
+      {
+        "entity": "the German Empire,",
+        "char_idx": 66
+      },
+      {
+        "entity": "14 March 1879.",
+        "char_idx": 88
+      },
+      {
+        "entity": "Hermann Einstein,",
+        "char_idx": 120
+      },
+      {
+        "entity": "Pauline Koch.",
+        "char_idx": 167
+      }
+    ],
+    "canonical_dim": 768,
+    "canonical_first_8": [
+      -0.16467,
+      -0.28784,
+      -0.65039,
+      0.1897,
+      -0.37036,
+      -0.13586,
+      44.875,
+      0.60742
+    ],
+    "canonical_norm": 303.97222900390625,
+    "D_mean": 0.08664894104003906,
+    "V_last": 11170.787109375,
+    "H_last": 4.000488758087158,
+    "asserts_passed": true
+  },
+  "wikipedia_eval": {
+    "mlp_epoch_history": [
+      {
+        "epoch": 1,
+        "train_loss": 0.7032,
+        "test_acc": 0.5
+      },
+      {
+        "epoch": 2,
+        "train_loss": 0.7027,
+        "test_acc": 0.5
+      },
+      {
+        "epoch": 3,
+        "train_loss": 0.7092,
+        "test_acc": 0.5
+      },
+      {
+        "epoch": 4,
+        "train_loss": 0.6893,
+        "test_acc": 0.4
+      },
+      {
+        "epoch": 5,
+        "train_loss": 0.6919,
+        "test_acc": 0.45
+      },
+      {
+        "epoch": 6,
+        "train_loss": 0.6897,
+        "test_acc": 0.35
+      },
+      {
+        "epoch": 7,
+        "train_loss": 0.6931,
+        "test_acc": 0.4
+      },
+      {
+        "epoch": 8,
+        "train_loss": 0.6851,
+        "test_acc": 0.4
+      },
+      {
+        "epoch": 9,
+        "train_loss": 0.6939,
+        "test_acc": 0.45
+      },
+      {
+        "epoch": 10,
+        "train_loss": 0.692,
+        "test_acc": 0.2
+      }
+    ],
+    "mlp_best_acc": 0.5,
+    "accuracy": 0.5,
+    "precision": 0.5,
+    "recall": 1.0,
+    "f1": 0.6666666666666666,
+    "auc_roc": 0.49,
+    "brier": 0.2523031234741211,
+    "n": 20,
+    "cm": {
+      "tn": 0,
+      "fp": 10,
+      "fn": 0,
+      "tp": 10
+    },
+    "label_distribution": {
+      "y=0": 10,
+      "y=1": 10
+    },
+    "pred_distribution": {
+      "p=0": 0,
+      "p=1": 20
+    },
+    "prob_min": 0.514,
+    "prob_max": 0.5574,
+    "prob_mean": 0.5388
+  },
+  "downstream_datasets": {
+    "subsamples_requested": {
+      "truthfulqa": 20,
+      "triviaqa": 20,
+      "coqa": 20,
+      "tydiqa": 20,
+      "halueval_qa": 30,
+      "halueval_summ": 20,
+      "halueval_dialog": 30
+    },
+    "truthfulqa": {
+      "loaded": true,
+      "n": 20,
+      "loader_idx_used": 0,
+      "columns": [
+        "type",
+        "category",
+        "question",
+        "best_answer",
+        "correct_answers",
+        "incorrect_answers",
+        "source"
+      ],
+      "raw_y_pred_prob_first_50": [
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5561
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5418
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.536
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5589
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5402
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5354
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5432
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5662
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5722
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5417
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5611
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.548
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5774
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.541
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5434
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5243
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.533
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5304
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5723
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5394
+        }
+      ],
+      "n_eval_failures": 0
+    },
+    "triviaqa": {
+      "loaded": true,
+      "n": 20,
+      "loader_idx_used": 0,
+      "columns": [
+        "question",
+        "question_id",
+        "question_source",
+        "entity_pages",
+        "search_results",
+        "answer"
+      ],
+      "raw_y_pred_prob_first_50": [
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5558
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5661
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5566
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5293
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5823
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5431
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5718
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5526
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5214
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5579
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5378
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5645
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5329
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5337
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5683
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5635
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5581
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5415
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.552
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5659
+        }
+      ],
+      "n_eval_failures": 0
+    },
+    "coqa": {
+      "loaded": true,
+      "n": 20,
+      "loader_idx_used": 0,
+      "columns": [
+        "source",
+        "story",
+        "questions",
+        "answers"
+      ],
+      "raw_y_pred_prob_first_50": [
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5198
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5876
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.565
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5542
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5314
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5381
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5514
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5361
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5685
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5533
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5486
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5852
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5556
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5436
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5762
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5601
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.536
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5526
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5561
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5695
+        }
+      ],
+      "n_eval_failures": 0
+    },
+    "tydiqa": {
+      "loaded": true,
+      "n": 20,
+      "loader_idx_used": 0,
+      "columns": [
+        "id",
+        "title",
+        "context",
+        "question",
+        "answers"
+      ],
+      "raw_y_pred_prob_first_50": [
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5571
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5285
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5411
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5515
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5759
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5474
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5495
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5533
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5377
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5475
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5845
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5597
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5261
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5372
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5485
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5883
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5353
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5469
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5541
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5804
+        }
+      ],
+      "n_eval_failures": 0
+    },
+    "halueval_qa": {
+      "loaded": true,
+      "n": 30,
+      "loader_idx_used": 0,
+      "columns": [
+        "knowledge",
+        "question",
+        "right_answer",
+        "hallucinated_answer"
+      ],
+      "raw_y_pred_prob_first_50": [
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5555
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5304
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5524
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5375
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.554
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5319
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5532
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5262
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5584
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.524
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5532
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5483
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5394
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5247
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5493
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5277
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5374
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5292
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5459
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.53
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5452
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5261
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5633
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5401
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5553
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5339
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5498
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5245
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5469
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.536
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5475
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5359
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5602
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.523
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5539
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5295
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5568
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5353
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5332
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5244
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5531
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5257
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5468
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5229
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5535
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.532
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.551
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5204
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5493
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5228
+        }
+      ],
+      "n_eval_failures": 0
+    },
+    "halueval_summ": {
+      "loaded": true,
+      "n": 20,
+      "loader_idx_used": 0,
+      "columns": [
+        "document",
+        "right_summary",
+        "hallucinated_summary"
+      ],
+      "raw_y_pred_prob_first_50": [
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5325
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5271
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5252
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5304
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5497
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5312
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5196
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5237
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5322
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5279
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5258
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5195
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5483
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5333
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5296
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5288
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5292
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5364
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5256
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5255
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5344
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5324
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5297
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5255
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5155
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5176
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5252
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5264
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5289
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5304
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5367
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5404
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5275
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5219
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5321
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5226
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5202
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5177
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5273
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5209
+        }
+      ],
+      "n_eval_failures": 0
+    },
+    "halueval_dialog": {
+      "loaded": true,
+      "n": 30,
+      "loader_idx_used": 0,
+      "columns": [
+        "knowledge",
+        "dialogue_history",
+        "right_response",
+        "hallucinated_response"
+      ],
+      "raw_y_pred_prob_first_50": [
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5289
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.531
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5313
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5333
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5355
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5287
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5264
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5237
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5388
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5396
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5419
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5573
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5501
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5519
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5409
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5405
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5399
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5464
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5448
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5313
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5468
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5348
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5372
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5383
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5351
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5357
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.55
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5334
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5514
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5511
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5429
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5315
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5503
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.54
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5593
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5418
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5383
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.538
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5333
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5422
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5413
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.538
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5458
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5368
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5433
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5424
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5412
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.54
+        },
+        {
+          "y": 0,
+          "p": 1,
+          "prob": 0.5555
+        },
+        {
+          "y": 1,
+          "p": 1,
+          "prob": 0.5577
+        }
+      ],
+      "n_eval_failures": 0
+    }
+  },
+  "multitask": {
+    "truthfulqa": {
+      "n": 20,
+      "accuracy": 0.25,
+      "precision": 0.25,
+      "recall": 1.0,
+      "f1": 0.4,
+      "auc_roc": 0.6266666666666667,
+      "brier": 0.275112937222198,
+      "cm": {
+        "tn": 0,
+        "fp": 15,
+        "fn": 0,
+        "tp": 5
+      },
+      "label_distribution": {
+        "y=0": 15,
+        "y=1": 5
+      },
+      "pred_distribution": {
+        "p=0": 0,
+        "p=1": 20
+      },
+      "prob_min": 0.5243,
+      "prob_max": 0.5774,
+      "prob_mean": 0.5481
+    },
+    "triviaqa": {
+      "n": 20,
+      "accuracy": 0.95,
+      "precision": 0.95,
+      "recall": 1.0,
+      "f1": 0.9743589743589743,
+      "auc_roc": 0.10526315789473684,
+      "brier": 0.2071034543916909,
+      "cm": {
+        "tn": 0,
+        "fp": 1,
+        "fn": 0,
+        "tp": 19
+      },
+      "label_distribution": {
+        "y=0": 1,
+        "y=1": 19
+      },
+      "pred_distribution": {
+        "p=0": 0,
+        "p=1": 20
+      },
+      "prob_min": 0.5214,
+      "prob_max": 0.5823,
+      "prob_mean": 0.5528
+    },
+    "coqa": {
+      "n": 20,
+      "accuracy": 0.9,
+      "precision": 0.9,
+      "recall": 1.0,
+      "f1": 0.9473684210526315,
+      "auc_roc": 0.4722222222222222,
+      "brier": 0.20970443474146644,
+      "cm": {
+        "tn": 0,
+        "fp": 2,
+        "fn": 0,
+        "tp": 18
+      },
+      "label_distribution": {
+        "y=0": 2,
+        "y=1": 18
+      },
+      "pred_distribution": {
+        "p=0": 0,
+        "p=1": 20
+      },
+      "prob_min": 0.5198,
+      "prob_max": 0.5876,
+      "prob_mean": 0.5545
+    },
+    "tydiqa": {
+      "n": 20,
+      "accuracy": 0.6,
+      "precision": 0.6,
+      "recall": 1.0,
+      "f1": 0.75,
+      "auc_roc": 0.5729166666666667,
+      "brier": 0.24157388459757617,
+      "cm": {
+        "tn": 0,
+        "fp": 8,
+        "fn": 0,
+        "tp": 12
+      },
+      "label_distribution": {
+        "y=0": 8,
+        "y=1": 12
+      },
+      "pred_distribution": {
+        "p=0": 0,
+        "p=1": 20
+      },
+      "prob_min": 0.5261,
+      "prob_max": 0.5883,
+      "prob_mean": 0.5525
+    },
+    "halueval_qa": {
+      "n": 60,
+      "accuracy": 0.5,
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6666666666666666,
+      "auc_roc": 0.02333333333333333,
+      "brier": 0.26239116098969395,
+      "cm": {
+        "tn": 0,
+        "fp": 30,
+        "fn": 0,
+        "tp": 30
+      },
+      "label_distribution": {
+        "y=0": 30,
+        "y=1": 30
+      },
+      "pred_distribution": {
+        "p=0": 0,
+        "p=1": 60
+      },
+      "prob_min": 0.5204,
+      "prob_max": 0.5633,
+      "prob_mean": 0.5404
+    },
+    "halueval_summ": {
+      "n": 40,
+      "accuracy": 0.5,
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6666666666666666,
+      "auc_roc": 0.405,
+      "brier": 0.25225172114019845,
+      "cm": {
+        "tn": 0,
+        "fp": 20,
+        "fn": 0,
+        "tp": 20
+      },
+      "label_distribution": {
+        "y=0": 20,
+        "y=1": 20
+      },
+      "pred_distribution": {
+        "p=0": 0,
+        "p=1": 40
+      },
+      "prob_min": 0.5155,
+      "prob_max": 0.5497,
+      "prob_mean": 0.5284
+    },
+    "halueval_dialog": {
+      "n": 60,
+      "accuracy": 0.5,
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6666666666666666,
+      "auc_roc": 0.3522222222222222,
+      "brier": 0.25360761355933437,
+      "cm": {
+        "tn": 0,
+        "fp": 30,
+        "fn": 0,
+        "tp": 30
+      },
+      "label_distribution": {
+        "y=0": 30,
+        "y=1": 30
+      },
+      "pred_distribution": {
+        "p=0": 0,
+        "p=1": 60
+      },
+      "prob_min": 0.5237,
+      "prob_max": 0.5593,
+      "prob_mean": 0.5402
+    }
+  },
+  "errors": [],
+  "schema_version": "2.1-smoke",
+  "timestamp_utc": "2026-05-28T12:57:39Z",
+  "host": "colab",
+  "features": [
+    "canonical_mind (last token, last layer)",
+    "D_mean (mean cosine distance between adjacent layers)",
+    "V_last (L2 cross-layer variance of last-token activations)",
+    "H_mean (mean Shannon entropy of per-step token distribution)"
+  ],
+  "scaler": {
+    "mean": [
+      0.08461633650586009,
+      9259.178845214843,
+      4.0178807334974405
+    ],
+    "scale": [
+      0.010216533716155702,
+      1938.1772931523813,
+      1.1241339790947995
+    ],
+    "features": [
+      "D_mean",
+      "V_last",
+      "H_mean"
+    ]
+  }
+}

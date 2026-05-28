@@ -1,6 +1,6 @@
 # STATUS.md — Project Snapshot
 
-_Last updated: 2026-05-28 (post Falcon-7B Kaggle run + Colab smoke-test creation)._
+_Last updated: 2026-05-28 (later) — gpt2 Colab smoke run completed; 7 per-model notebooks created with HF-namespace fix and full-dataset save._
 _Mid-evaluation completed: 2026-02-13. Supervisor: Prof. Ujjwal Bhattacharya, ISI Kolkata._
 
 ---
@@ -118,8 +118,26 @@ E:\Dessertation\
     ├── project_qwen2.5_7b.ipynb           <-- per-model Kaggle notebook (NOT YET RUN)
     ├── project_smoke_qwen0.5b.ipynb       <-- legacy smoke notebook (pre-2026-05-28)
     ├── project_tinyllama_1.1b.ipynb       <-- per-model Kaggle notebook (NOT YET RUN)
-    ├── smoke_test_colab\                  <-- 2026-05-28 NEW: tiny Colab-T4 smoke test (~5–8 min)
-    │   └── project_smoke_gpt2.ipynb       <-- gpt2 (124M), 50/class, fixed HF dataset namespaces
+    ├── project_smoke_gpt2\                <-- 2026-05-28 Colab smoke (RUN; result JSON in dir)
+    │   ├── project_smoke_gpt2.ipynb       <-- gpt2 (124M), 50/class. fp16. Includes BLOCK 6.5 dataset save.
+    │   ├── gpt2_smoke_results.json        <-- result of 2026-05-28 Colab run (see §9)
+    │   ├── gpt2_smoke_train.json          <-- 80 records (train split)
+    │   ├── gpt2_smoke_test.json           <-- 20 records (test split)
+    │   └── gpt2_smoke_mind_plus_best.pth  <-- best MLP weights (2.2 MB)
+    ├── project_kaggle_llama2_7b\          <-- 2026-05-28 NEW (NOT YET RUN). 1000/class bf16. Needs HF gated access.
+    │   └── project_kaggle_llama2_7b.ipynb
+    ├── project_kaggle_gptj_6b\            <-- 2026-05-28 NEW (NOT YET RUN). 1000/class bf16.
+    │   └── project_kaggle_gptj_6b.ipynb
+    ├── project_kaggle_falcon_7b\          <-- 2026-05-28 NEW (NOT YET RUN). 1000/class bf16. Replaces legacy root-level falcon notebook.
+    │   └── project_kaggle_falcon_7b.ipynb
+    ├── project_colab_tinyllama_11b\       <-- 2026-05-28 NEW (NOT YET RUN). 500/class bf16.
+    │   └── project_colab_tinyllama_11b.ipynb
+    ├── project_colab_qwen25_3b\           <-- 2026-05-28 NEW (NOT YET RUN). 500/class bf16. Replaces legacy qwen2.5_3b notebook.
+    │   └── project_colab_qwen25_3b.ipynb
+    ├── project_colab_qwen25_05b\          <-- 2026-05-28 NEW (NOT YET RUN). 300/class bf16. Replaces legacy smoke_qwen0.5b notebook.
+    │   └── project_colab_qwen25_05b.ipynb
+    ├── project_colab_opt_27b\             <-- 2026-05-28 NEW (NOT YET RUN). 500/class bf16. Replaces legacy opt_2.7b notebook.
+    │   └── project_colab_opt_27b.ipynb
     ├── requirements.txt                   <-- pinned deps
     ├── pytest.ini
     ├── hallucination_10k.json             <-- 1.1 GB pre-existing dataset (gitignored)
@@ -146,7 +164,7 @@ E:\Dessertation\
 | 5 | The 10 k samples reported in the mid-eval are not in the repo (they live on the student's Colab session storage and were not exported). They must be regenerated for the 6-feature ablation. | Medium | Session 2 of PLAN.md. |
 | 6 | None of the 7 downstream datasets are downloaded into the repo. | Medium | Session 3 of PLAN.md. |
 | 7 | No GitHub Actions CI; tests don't run on push. | Low | Optional, end of project. |
-| **8** | **HF dataset IDs `truthful_qa`, `trivia_qa`, `tydiqa` now require namespaces** (`truthfulqa/truthful_qa`, `mandarjoshi/trivia_qa`, `google-research-datasets/tydiqa`). All per-model notebooks emitted by `_build_notebooks.py` use the bare IDs and will fail on Kaggle (confirmed by the 2026-05-28 Falcon-7B run, see §9). | **Critical** | Patch every `project_*.ipynb`'s BLOCK 11; pattern already shipped in `smoke_test_colab/project_smoke_gpt2.ipynb` (uses `safe_load_first(...)` with namespaced + legacy fallback). |
+| **8** | **HF dataset IDs `truthful_qa`, `trivia_qa`, `tydiqa` now require namespaces** (`truthfulqa/truthful_qa`, `mandarjoshi/trivia_qa`, `google-research-datasets/tydiqa`). | **Critical** → **Resolved in new notebooks** (2026-05-28). Every notebook under `project_kaggle_*/` and `project_colab_*/` uses the `safe_load_first(...)` helper with namespaced + legacy fallback. Confirmed working on Colab gpt2 smoke run (all 7 datasets loaded via loader #0 = namespaced ID). **Legacy root-level `project_*.ipynb` files still contain the bug — treat them as deprecated and run only the new per-directory copies.** |
 | 9 | The Falcon-7B run reported F1 = 0.000 across the multi-task suite (model collapses to predicting class 0). Root cause is the MLP trained on 400 Wikipedia continuations does not transfer to other distributions — expected for this dataset size; not a bug. | Low | Re-evaluate at the planned ~10 k-sample scale; if F1 still 0 after scale-up, investigate threshold/calibration. |
 
 ---
@@ -189,6 +207,16 @@ Code changes (Issue #1–#4 above) are deferred to **Session 1 of PLAN.md**, whi
    * Writes `gpt2_smoke_results.json` containing **everything needed for verification offline**: env / library versions, model config, full timing breakdown, sanity-check intermediates (canonical-vector L2 norm, D_mean, V_last, H_last + asserts), data-gen skip-reason counters, raw `{y, p, prob}` predictions for the first 50 of every downstream dataset, all metrics + confusion matrices, and any non-fatal errors caught.
 3. **No edits to existing per-model notebooks** were made in this session. The same dataset-loader fix used in the smoke notebook still needs to be ported to every `project_*.ipynb` (Issue #8).
 
+### 2026-05-28 session (continued, later)
+1. **gpt2 Colab smoke run completed** by the student. 147 sec end-to-end on a Colab Free T4. All 7 downstream datasets loaded successfully (namespace fix confirmed). MLP collapses to "always class 1" on the 80-sample training set — expected at this scale, not a bug. Results captured in §9.
+2. **Created 7 new per-model notebooks** in their own `Code/project_<env>_<tag>/` directories (matching the `project_smoke_gpt2/` layout the student set up):
+   * **Kaggle bucket (1000 samples / class, bf16)** — `project_kaggle_llama2_7b`, `project_kaggle_gptj_6b`, `project_kaggle_falcon_7b`.
+   * **Colab bucket (500 samples / class, bf16)** — `project_colab_tinyllama_11b`, `project_colab_qwen25_3b`, `project_colab_opt_27b`.
+   * **Colab tiny (300 samples / class, bf16)** — `project_colab_qwen25_05b`.
+3. **Added BLOCK 6.5 (full-dataset save)** to every notebook including the previously-run smoke notebook. Each run now persists `<tag>_dataset_full.json` (every generated record, pre-split) alongside the existing train/test JSONs, the checkpoint JSON, the MLP `.pth`, and the results JSON. This unblocks offline ablations without re-running the LLM.
+4. **HF dataset namespace fix shipped** to every new notebook (Issue #8 resolved in the new fleet; legacy root-level notebooks remain broken and are now deprecated).
+5. **No edits to root-level `project_*.ipynb`** in this session either — those are kept around for reference/diff inspection only.
+
 ---
 
 ## 9. Results log
@@ -205,6 +233,7 @@ Both files appear in `/kaggle/working/`. The notebook also prints a copy-paste-r
 | # | Date (UTC) | Host | Model | Samples | AUC-ROC (wiki) | F1 (wiki) | Acc (wiki) | Notes |
 |---|---|---|---|---|---|---|---|---|
 | 1 | 2026-05-28 | kaggle | tiiuae/falcon-7b | 200 H + 200 ¬H (Wiki) | 0.346 | 0.000 | 0.500 | Multi-task: coqa AUROC 0.409, halueval_qa 0.943, halueval_summ 0.564, halueval_dialog 0.582. `truthfulqa`, `triviaqa`, `tydiqa` FAILED to load (Issue #8). All multi-task F1 = 0.000 (predicts class 0 only — see Issue #9). |
+| 2 | 2026-05-28 | colab  | gpt2 (124M, fp16) | 50 H + 50 ¬H (Wiki) | 0.49 | 0.667 | 0.500 | Colab Free T4. 147 sec end-to-end. All 7 datasets loaded (namespace fix worked: loader #0 = namespaced ID for every dataset). MLP collapses to "always class 1" — expected with 80 training samples on a 124M backbone. Purpose: pipeline verification, NOT a meaningful AUROC. Multi-task: triviaqa F1 0.974 (label distribution 19/1 → trivially high), truthfulqa F1 0.40, halueval_* F1 0.667 (constant predictor). Data-gen skip counters healthy: `model_knew` 71, `no_match_in_topk` 56. |
 
 After each run, copy the row from `results_summary.md` and paste it under "Run history". Keep the most recent run at the bottom.
 
