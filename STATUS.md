@@ -1,6 +1,6 @@
 # STATUS.md — Project Snapshot
 
-_Last updated: 2026-05-23 (post mid-eval review session)._
+_Last updated: 2026-05-28 (post Falcon-7B Kaggle run + Colab smoke-test creation)._
 _Mid-evaluation completed: 2026-02-13. Supervisor: Prof. Ujjwal Bhattacharya, ISI Kolkata._
 
 ---
@@ -110,6 +110,16 @@ E:\Dessertation\
 └── Code\
     ├── project.ipynb                      <-- CURRENTLY at Qwen-2.5-0.5B (WRONG — must revert to Qwen-2.5-3B; see Issue #1)
     ├── notebook_refactored.ipynb          <-- thin driver notebook
+    ├── project_falcon_7b.ipynb            <-- per-model Kaggle notebook (RUN 2026-05-28; see §9)
+    ├── project_gptj_6b.ipynb              <-- per-model Kaggle notebook (NOT YET RUN)
+    ├── project_opt_2.7b.ipynb             <-- per-model Kaggle notebook (NOT YET RUN)
+    ├── project_opt_6.7b.ipynb             <-- per-model Kaggle notebook (NOT YET RUN)
+    ├── project_qwen2.5_3b.ipynb           <-- per-model Kaggle notebook (NOT YET RUN)
+    ├── project_qwen2.5_7b.ipynb           <-- per-model Kaggle notebook (NOT YET RUN)
+    ├── project_smoke_qwen0.5b.ipynb       <-- legacy smoke notebook (pre-2026-05-28)
+    ├── project_tinyllama_1.1b.ipynb       <-- per-model Kaggle notebook (NOT YET RUN)
+    ├── smoke_test_colab\                  <-- 2026-05-28 NEW: tiny Colab-T4 smoke test (~5–8 min)
+    │   └── project_smoke_gpt2.ipynb       <-- gpt2 (124M), 50/class, fixed HF dataset namespaces
     ├── requirements.txt                   <-- pinned deps
     ├── pytest.ini
     ├── hallucination_10k.json             <-- 1.1 GB pre-existing dataset (gitignored)
@@ -117,6 +127,7 @@ E:\Dessertation\
     ├── survey_chapter.md                  <-- Markdown source of the survey PDF
     ├── survey_notes.md                    <-- raw per-paper extraction notes
     ├── _patch_notebook.py                 <-- one-off; rewrote project.ipynb to (incorrectly) Qwen-0.5B
+    ├── _build_notebooks.py                <-- one-off; emitted the per-model notebooks above
     ├── _build_pdf.py                      <-- one-off; built the survey PDF
     ├── src/                               <-- modules; STALE — still on Llama-3.2-1B; needs sync to Qwen-3B
     └── tests/                             <-- 24 passing / 4 skipped on machines with torch
@@ -135,6 +146,8 @@ E:\Dessertation\
 | 5 | The 10 k samples reported in the mid-eval are not in the repo (they live on the student's Colab session storage and were not exported). They must be regenerated for the 6-feature ablation. | Medium | Session 2 of PLAN.md. |
 | 6 | None of the 7 downstream datasets are downloaded into the repo. | Medium | Session 3 of PLAN.md. |
 | 7 | No GitHub Actions CI; tests don't run on push. | Low | Optional, end of project. |
+| **8** | **HF dataset IDs `truthful_qa`, `trivia_qa`, `tydiqa` now require namespaces** (`truthfulqa/truthful_qa`, `mandarjoshi/trivia_qa`, `google-research-datasets/tydiqa`). All per-model notebooks emitted by `_build_notebooks.py` use the bare IDs and will fail on Kaggle (confirmed by the 2026-05-28 Falcon-7B run, see §9). | **Critical** | Patch every `project_*.ipynb`'s BLOCK 11; pattern already shipped in `smoke_test_colab/project_smoke_gpt2.ipynb` (uses `safe_load_first(...)` with namespaced + legacy fallback). |
+| 9 | The Falcon-7B run reported F1 = 0.000 across the multi-task suite (model collapses to predicting class 0). Root cause is the MLP trained on 400 Wikipedia continuations does not transfer to other distributions — expected for this dataset size; not a bug. | Low | Re-evaluate at the planned ~10 k-sample scale; if F1 still 0 after scale-up, investigate threshold/calibration. |
 
 ---
 
@@ -157,13 +170,24 @@ Total Kaggle GPU budget for the full plan: ~39 hours (~1.3 weeks of the 30 h / w
 
 ## 8. Where this session ended
 
-This Cowork session (2026-05-23) did **not** change the code. It produced:
+### 2026-05-23 session
+This Cowork session did **not** change the code. It produced:
 
 - The 11-page literature survey chapter (committed; 4 commits ready to push on `main`).
 - This rewritten STATUS.md.
 - The session-wise PLAN.md.
 
 Code changes (Issue #1–#4 above) are deferred to **Session 1 of PLAN.md**, which the student will run in the next Cowork session.
+
+### 2026-05-28 session
+1. Ran **`project_falcon_7b.ipynb` on Kaggle** (the run was done by the student before this Cowork session opened; the assistant only saw the screenshot output). Results captured in §9 below. Three of the seven downstream datasets failed to load — root cause is the bare HF IDs (`truthful_qa`, `trivia_qa`, `tydiqa`) which now require namespaces. Logged as Issue #8.
+2. Created **`Code/smoke_test_colab/project_smoke_gpt2.ipynb`** — a tiny end-to-end smoke test for Colab Free T4:
+   * `gpt2` (124M) backbone — fits trivially in T4 fp16; whole pipeline finishes in ~5–8 min.
+   * 50 samples / class data-gen.
+   * 20–30 samples / downstream dataset.
+   * **Fixed the broken HF dataset IDs** with a `safe_load_first(...)` helper that tries the namespaced ID first and falls back to the legacy bare ID for older `datasets` versions.
+   * Writes `gpt2_smoke_results.json` containing **everything needed for verification offline**: env / library versions, model config, full timing breakdown, sanity-check intermediates (canonical-vector L2 norm, D_mean, V_last, H_last + asserts), data-gen skip-reason counters, raw `{y, p, prob}` predictions for the first 50 of every downstream dataset, all metrics + confusion matrices, and any non-fatal errors caught.
+3. **No edits to existing per-model notebooks** were made in this session. The same dataset-loader fix used in the smoke notebook still needs to be ported to every `project_*.ipynb` (Issue #8).
 
 ---
 
@@ -178,11 +202,11 @@ Both files appear in `/kaggle/working/`. The notebook also prints a copy-paste-r
 
 ### Run history
 
-| # | Date (UTC) | Host | Model | Samples | AUC-ROC | F1 | Acc | Notes |
+| # | Date (UTC) | Host | Model | Samples | AUC-ROC (wiki) | F1 (wiki) | Acc (wiki) | Notes |
 |---|---|---|---|---|---|---|---|---|
-| — | _pending_ | — | — | — | — | — | — | first Kaggle run to be appended here |
+| 1 | 2026-05-28 | kaggle | tiiuae/falcon-7b | 200 H + 200 ¬H (Wiki) | 0.346 | 0.000 | 0.500 | Multi-task: coqa AUROC 0.409, halueval_qa 0.943, halueval_summ 0.564, halueval_dialog 0.582. `truthfulqa`, `triviaqa`, `tydiqa` FAILED to load (Issue #8). All multi-task F1 = 0.000 (predicts class 0 only — see Issue #9). |
 
-After each run, copy the row from `results_summary.md` and paste it under "Run history". Keep the most recent run at th "Run history". Keep the most recent run at the bottom.
+After each run, copy the row from `results_summary.md` and paste it under "Run history". Keep the most recent run at the bottom.
 
 ### Latest results JSON (paste-area)
 

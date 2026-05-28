@@ -2,6 +2,7 @@
 
 _Written: 2026-05-23. Based on the Feb 2026 mid-evaluation baseline._
 _Updated: 2026-05-23 (afternoon) — 7B / 6B models reinstated; targeting better headline AUROC._
+_Updated: 2026-05-28 — Falcon-7B added to the per-model fleet (first Kaggle run done); Colab-T4 smoke test introduced in `Code/smoke_test_colab/`; HF dataset namespace fix logged as STATUS Issue #8._
 _Author: Chinmoy Sahoo, CS2412. Supervisor: Prof. Ujjwal Bhattacharya, ISI Kolkata._
 
 This document is the **single source of truth for what to do next**. It is divided into self-contained "sessions" sized to fit one **Kaggle free-tier session (9-hour hard cap, 30 h / week of T4×2 GPU)**. Each session declares its inputs, outputs, hardware requirements, acceptance criteria, and risks.
@@ -18,7 +19,9 @@ Read `STATUS.md` first to remember where the project stands. This file then says
    - **Secondary**: `TinyLlama/TinyLlama-1.1B-Chat-v1.0` (mid-eval baseline; AUROC 0.592).
    - **Scale-up 1**: `meta-llama/Llama-2-7b-hf` — *requires HuggingFace gated-access approval; apply on Day 1.*
    - **Scale-up 2**: `EleutherAI/gpt-j-6b` (different architecture from Qwen / Llama — cross-arch story).
-   - Smoke test: `Qwen/Qwen2.5-0.5B` (fast iteration only; not reported in final results).
+   - Smoke test (Kaggle): `Qwen/Qwen2.5-0.5B` (fast iteration only; not reported in final results).
+   - Smoke test (Colab T4, NEW 2026-05-28): `gpt2` (124M) via `Code/smoke_test_colab/project_smoke_gpt2.ipynb` — 5–8 min end-to-end; only for pipeline-correctness verification.
+   - **Opportunistic** (notebooks emitted but not in the headline 4-model story): `tiiuae/falcon-7b` (first Kaggle run 2026-05-28, partial results — see STATUS §9), `Qwen/Qwen2.5-7B`, `facebook/opt-2.7b`, `facebook/opt-6.7b`. Whether these appear in the thesis is a stretch decision; main story remains the original 4.
 3. **Why 7B / 6B back in scope**: Kaggle's T4×2 = 32 GB fits both in **bf16** (Llama-2-7B uses ~14 GB, GPT-J-6B ~12 GB on one of the two GPUs). No int8 quantisation needed — clean bf16 numbers, directly comparable to the Qwen-3B baseline. Larger models give a stronger AUROC story (HaloScope reports ~0.78 on TruthfulQA with Llama-2-7B vs. your current 0.673).
 4. **Dataset suite**: all 7 (TruthfulQA, TriviaQA, CoQA, TydiQA-GP English, HaluEval-QA, HaluEval-Summarisation, HaluEval-Dialogue).
 5. **Originality discipline**: strict separation from Sharanya Dasgupta's HalluShift — no Wasserstein, no mtp / Mps / Mg, no automated feature selection. See STATUS.md §4 for the full table.
@@ -277,3 +280,5 @@ If you have **Kaggle Pro** (`$5 / month`), the weekly budget rises to 60 h — e
 - **2026-05-23 (early afternoon)** — Compute environment changed from Colab Free to **Kaggle Free** (T4×2 = 32 GB total; 9 h session, 30 h / week).
 - **2026-05-23 (late afternoon)** — **Llama-2-7B + GPT-J-6B reinstated**. Rationale: better headline AUROC (HaloScope reports 0.78 on TruthfulQA at 7B vs. our current 0.673 at 3B); Kaggle T4×2 fits both in bf16 without int8 overhead; matches the mid-eval future-work slide commitments.
 - **2026-05-23** — Llama-2-7B HuggingFace gated access must be applied for in Session 1 (Day 1).
+- **2026-05-28** — First Kaggle run completed (`project_falcon_7b.ipynb`, ~400 Wiki samples). Three of seven downstream datasets failed at load time due to the HuggingFace bare-ID → namespaced-ID transition (`truthful_qa` → `truthfulqa/truthful_qa`, `trivia_qa` → `mandarjoshi/trivia_qa`, `tydiqa` → `google-research-datasets/tydiqa`). Logged as STATUS Issue #8. **All `project_*.ipynb` BLOCK 11 cells must be patched with the same `safe_load_first(...)` pattern now in `smoke_test_colab/project_smoke_gpt2.ipynb`** before further Kaggle runs.
+- **2026-05-28** — New Colab-T4 smoke test added at `Code/smoke_test_colab/project_smoke_gpt2.ipynb`. Backbone: `gpt2` (124M). Purpose: pipeline-correctness verification before committing GPU budget to 7B-class models. Result-dump JSON is intentionally verbose (env / library versions / sanity intermediates / raw `{y, p, prob}` slices / timings) so an offline reviewer can judge a run from the single file.

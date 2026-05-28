@@ -911,4 +911,44 @@ def write_notebook(path, cells):
 
 def main():
     base = build_cells()
-    for tag, model_name, env, n_
+    for tag, model_name, env, n_samples in MODELS:
+        nb_name = f"project_{tag}"
+        mapping = {
+            "__MODEL_NAME__":   model_name,
+            "__MODEL_TAG__":    tag,
+            "__TARGET_SAMPLES__": n_samples,
+            "__TARGET_ENV__":   "Kaggle Free (T4×2 bf16)" if env == "kaggle"
+                                 else "Colab Free (T4 bf16)",
+            "__NOTEBOOK_NAME__": nb_name,
+        }
+        cells = substitute(base, mapping)
+        write_notebook(HERE / f"{nb_name}.ipynb", cells)
+
+
+if __name__ == "__main__":
+    main()
+{"name": "python"}},
+          "nbformat": 4, "nbformat_minor": 5}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(nb, f, indent=1)
+    print(f"wrote {path}")
+
+
+def main():
+    base = build_cells()
+    for tag, model_name, env, n_samples in MODELS:
+        nb_name = f"project_{tag}"
+        mapping = {
+            "__MODEL_NAME__":   model_name,
+            "__MODEL_TAG__":    tag,
+            "__TARGET_SAMPLES__": n_samples,
+            "__TARGET_ENV__":   "Kaggle Free (T4x2 bf16)" if env == "kaggle"
+                                 else "Colab Free (T4 bf16)",
+            "__NOTEBOOK_NAME__": nb_name,
+        }
+        cells = substitute(base, mapping)
+        write_notebook(HERE / f"{nb_name}.ipynb", cells)
+
+
+if __name__ == "__main__":
+    main()

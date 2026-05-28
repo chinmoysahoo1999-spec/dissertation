@@ -102,4 +102,20 @@ def test_get_entities_returns_occurrences():
     entities = [e for e, _ in occ]
     assert entities.count("Einstein") >= 2
     assert "Ulm" in entities
-    # Indexes must point to wher
+    # Indexes must point to where the entity actually starts in the text.
+    for ent, idx in occ:
+        assert text[idx : idx + len(ent)] == ent
+
+
+def test_get_entities_keeps_trailing_punctuation_in_boundary():
+    """
+    Documents the (intentional) behavior inherited from the original notebook:
+    find_boundaries expands to the next whitespace, so a trailing period stays
+    glued to the entity. The dataset_gen filter handles this downstream.
+    """
+    text = "He was born in Ulm. Then moved away."
+    nlp = _FakeNLP(["Ulm"])
+    occ = get_entities(text, nlp)
+    matched = {e for e, _ in occ}
+    # The boundary-expanded form "Ulm." should appear somewhere.
+    assert any("Ulm" in e for e in matched)
