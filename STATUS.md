@@ -1,6 +1,6 @@
 # STATUS.md — Project Snapshot
 
-_Last updated: 2026-05-28 (later) — gpt2 Colab smoke run completed; 7 per-model notebooks created with HF-namespace fix and full-dataset save._
+_Last updated: 2026-05-29 — pivot to **one unified `all_variants.ipynb` per model**: data-gen + F1–F10 feature extraction + 12 MLP variants in one resume-safe notebook. Deployed for gpt2 + Qwen2.5-0.5B._
 _Mid-evaluation completed: 2026-02-13. Supervisor: Prof. Ujjwal Bhattacharya, ISI Kolkata._
 
 ---
@@ -166,6 +166,7 @@ E:\Dessertation\
 | 7 | No GitHub Actions CI; tests don't run on push. | Low | Optional, end of project. |
 | **8** | **HF dataset IDs `truthful_qa`, `trivia_qa`, `tydiqa` now require namespaces** (`truthfulqa/truthful_qa`, `mandarjoshi/trivia_qa`, `google-research-datasets/tydiqa`). | **Critical** → **Resolved in new notebooks** (2026-05-28). Every notebook under `project_kaggle_*/` and `project_colab_*/` uses the `safe_load_first(...)` helper with namespaced + legacy fallback. Confirmed working on Colab gpt2 smoke run (all 7 datasets loaded via loader #0 = namespaced ID). **Legacy root-level `project_*.ipynb` files still contain the bug — treat them as deprecated and run only the new per-directory copies.** |
 | 9 | The Falcon-7B run reported F1 = 0.000 across the multi-task suite (model collapses to predicting class 0). Root cause is the MLP trained on 400 Wikipedia continuations does not transfer to other distributions — expected for this dataset size; not a bug. | Low | Re-evaluate at the planned ~10 k-sample scale; if F1 still 0 after scale-up, investigate threshold/calibration. |
+| **10** | **§3 mis-glosses HalluShift's mtp / Mps / Mg.** §3 of this file currently says: "mtp = mean token probability", "Mps = max positive shift", "Mg = mean neg-log-prob gain". The 2026-05-29 audit of Dasgupta's actual thesis revealed: `mtp = min(P_max)` (**minimum**, not mean), `Mps = max(P_max − P_min)` (a **spread**, not a positive shift), `Mg = mean abs gradient of confidence between adjacent tokens`. Citing her work with wrong definitions in the lit-review chapter is worse than copying it. | **High** | Patch the §3 "Sharanya vs ours" table before the literature-survey chapter goes out. |
 
 ---
 
@@ -216,6 +217,20 @@ Code changes (Issue #1–#4 above) are deferred to **Session 1 of PLAN.md**, whi
 3. **Added BLOCK 6.5 (full-dataset save)** to every notebook including the previously-run smoke notebook. Each run now persists `<tag>_dataset_full.json` (every generated record, pre-split) alongside the existing train/test JSONs, the checkpoint JSON, the MLP `.pth`, and the results JSON. This unblocks offline ablations without re-running the LLM.
 4. **HF dataset namespace fix shipped** to every new notebook (Issue #8 resolved in the new fleet; legacy root-level notebooks remain broken and are now deprecated).
 5. **No edits to root-level `project_*.ipynb`** in this session either — those are kept around for reference/diff inspection only.
+
+### 2026-05-29 session — unified `all_variants.ipynb` pivot
+1. **Plagiarism audit completed** vs HalluShift (Sharanya Dasgupta, ISI Kolkata, June 2025). Estimated text-similarity: **8–18 %** assuming discipline (don't quote her 16 distinctive phrases, don't reproduce her HaluEval table layout, use fresh notation `z_l` not `h_l^t`, rename "Probabilistic Features" if used as a header). STATUS.md §4's differentiation claim holds; **but three of her feature glosses (mtp / Mps / Mg) are mis-defined in §3 and must be corrected before the lit-review chapter goes out** — see Issue #10 below.
+2. **SOTA audit completed** for the 7 benchmarks on Llama-2-7B in the live-generation regime: HalluShift is currently SOTA on TruthfulQA-gen / TriviaQA-nc / CoQA / TydiQA-GP / HaluEval-QA. Beating her on those rows = setting a new public ceiling. Her weak spots are **HaluEval-Summ (AUROC 52 = random)** and **HaluEval-Dialogue (77)** — these are the easiest wins.
+3. **Novel-feature menu compiled** (10 candidates, none colliding with HalluShift). Top 3 recommended for stacking: **F1 Lookback Ratio** ([Lookback Lens, EMNLP 2024](https://aclanthology.org/2024.emnlp-main.84/)), **F5 Logit-Lens JSD** ([DoLa](https://arxiv.org/abs/2309.03883) / [SLED](https://arxiv.org/abs/2411.02433)), **F7 Token Max-Margin** ([HaMI, NeurIPS 2025](https://arxiv.org/abs/2504.07863)).
+4. **Architectural pivot — unified `all_variants.ipynb`** replaces the 6-variant fleet (variant_A.ipynb..variant_F.ipynb) deleted from project_smoke_gpt2/. One notebook per model now does:
+   * Stage 2: MIND data-gen → `<tag>_dataset_full.json` (**skipped if file exists**)
+   * Stage 3: F1–F10 feature extraction → `<tag>_dataset_with_features.json` (**skipped if file exists**)
+   * Stage 4: train 12 MLP variants (A through L) → 12 `<tag>_variant_<X>_best.pth` checkpoints
+   * Stage 5: consolidated `<tag>_all_variants_results.json` (single audit file with the full metrics matrix)
+   * **Resume-safe by design**: rerunning after a Colab disconnect skips completed stages because the output JSONs already exist.
+5. **Deployed `all_variants.ipynb`** in 2 model directories: `project_smoke_gpt2/` (gpt2, 50/class, fp16) and `project_colab_qwen25_05b/` (Qwen2.5-0.5B, 300/class, bf16). Other 6 model directories keep their `project_<tag>.ipynb` from 2026-05-28 — they will only be migrated to the unified design if the gpt2 + Qwen-0.5B ablation shows a useful gain.
+6. **Variant list (12)** — A: canonical only; B: +D_mean; C: +V_last; D: +H_mean; E: +D_mean+V_last+H_mean (MIND+ headline); F: +F1; G: +F5; H: +F7; I: +F1+F5+F7 (recommended trio); J: +all 9 F-features; K: E + trio (F1+F5+F7); L: everything. Easy to extend by editing `VARIANTS` dict in the notebook.
+7. **F9 (SAPLMA mid-layer probe) deferred** — it requires a separately trained linear probe on labeled data; current pipeline has no place to inject this training step yet.
 
 ---
 

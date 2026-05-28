@@ -1,6 +1,6 @@
 # HANDOVER.md — Next-session briefing
 
-_Written: 2026-05-28 (end of session). Author: Cowork assistant. For: the next Cowork session._
+_Written: 2026-05-28; updated 2026-05-29. Author: Cowork assistant. For: the next Cowork session._
 
 This document is the first thing the next session should read. It is intentionally short and direct. The longer state lives in `STATUS.md` (snapshot) and `PLAN.md` (roadmap) — this file just gives the new session enough context to pick up the thread without re-reading both.
 
@@ -36,14 +36,19 @@ Evaluate across **4 LLMs** (TinyLlama-1.1B, Qwen2.5-3B, GPT-J-6B, Llama-2-7B) an
 
 * **Falcon-7B Kaggle run (2026-05-28)** — the legacy `Code/project_falcon_7b.ipynb` was run with 200 H + 200 ¬H samples; 3 of 7 downstream datasets failed (namespace bug, now fixed in the new fleet). Multi-task F1 = 0.0 across the board (expected at this sample size — MLP collapses to constant predictor). Re-run the **new** `Code/project_kaggle_falcon_7b/` notebook at 1000/class to get a meaningful number.
 * **gpt2 Colab smoke run (2026-05-28)** — completed cleanly, but predictions collapsed to "always class 1" with 80 training samples on a 124M backbone. Smoke purpose was pipeline verification, not a meaningful AUROC. **Don't waste time interpreting gpt2 metrics — they are diagnostic, not scientific.**
+* **(2026-05-29) unified `all_variants.ipynb` not yet run.** Both `project_smoke_gpt2/all_variants.ipynb` and `project_colab_qwen25_05b/all_variants.ipynb` are deployed and AST-validated; awaiting the next Colab session.
 
 ### What still needs to happen
 
-In priority order (matches PLAN.md sessions 1–14):
+In priority order:
 
-1. **Apply for Llama-2-7B HuggingFace gated access** at https://huggingface.co/meta-llama/Llama-2-7b-hf (approval typically < 1 hour). Required before `project_kaggle_llama2_7b/` can run.
-2. **Run the 4 Colab notebooks** in this order to verify they work end-to-end on Colab Free T4:
-   * `project_colab_qwen25_05b/` (300/class, ~10 min) — quickest sanity check.
+1. **Run `project_smoke_gpt2/all_variants.ipynb`** on Colab Free T4 first (~6–10 min total: ~3 min data-gen + ~1 min features + ~1 min training 12 variants). This is the cheapest end-to-end check of the new unified pipeline. Paste `gpt2_smoke_all_variants_results.json` back to the assistant. If all 12 variants train and the result JSON has a sane `variants` block, the pipeline is correct.
+2. **Run `project_colab_qwen25_05b/all_variants.ipynb`** next on Colab T4 (~25–35 min: ~15 min data-gen at 300/class + ~5 min features + ~2 min training). This is the **headline ablation**: read the AUROC for variants A vs E vs I vs K vs L. The acceptance criterion is **E ≥ A + 0.02** (the original MIND+ story holds) AND ideally **K > E** (adding F1+F5+F7 on top of E gives more lift than E alone). If yes, the feature stack is real — scale up to bigger models. If no, rethink the feature stack before burning GPU budget.
+3. **Apply for Llama-2-7B HuggingFace gated access** at https://huggingface.co/meta-llama/Llama-2-7b-hf (approval typically < 1 hour). Required before `project_kaggle_llama2_7b/` can run.
+4. **(Conditional on step 2 passing)** Migrate the other 6 model notebooks to the unified `all_variants.ipynb` design. The builder script is `outputs/build_all_variants.py` (in the assistant's scratch directory) — extending it is a 2-line edit to the `MODELS` list.
+5. **Otherwise (step 2 fails)** Reopen the feature design before committing GPU budget. The assistant has a ranked menu of 10 candidate features; the F-stack can be re-ordered or replaced.
+6. **Patch STATUS.md §3** to fix the three mis-glossed HalluShift feature definitions (mtp / Mps / Mg — see STATUS.md Issue #10). Required before the lit-review chapter goes out, regardless of step 2 outcome.
+7. **Run the 4 Colab notebooks** (existing per-model fleet, not unified) once the ablation question is answered:
    * `project_colab_tinyllama_11b/` (500/class, ~15 min).
    * `project_colab_qwen25_3b/` (500/class, ~20 min) — this matches the mid-eval baseline target (AUROC 0.673 expected).
    * `project_colab_opt_27b/` (500/class, ~15 min).
@@ -84,18 +89,20 @@ Each notebook drops these into its working directory when run:
 | `<tag>_mind_plus_best.pth` | best MLP weights + scaler tensors |
 | `<tag>_results.json` | env / config / model info / metrics / timings — single-file audit |
 
-### The 8-notebook fleet
+### The 8-notebook fleet (status as of 2026-05-29)
 
-| Notebook | Env | Samples / class | dtype | Status |
+| Directory | Primary notebook | Samples / class | dtype | Status |
 |---|---|---|---|---|
-| `project_smoke_gpt2` | Colab T4 | 50 | fp16 | **RUN** 2026-05-28 — pipeline verified |
-| `project_colab_qwen25_05b` | Colab T4 | 300 | bf16 | not yet run |
-| `project_colab_tinyllama_11b` | Colab T4 | 500 | bf16 | not yet run |
-| `project_colab_qwen25_3b` | Colab T4 | 500 | bf16 | not yet run — **mid-eval primary model, target AUROC 0.673** |
-| `project_colab_opt_27b` | Colab T4 | 500 | bf16 | not yet run |
-| `project_kaggle_falcon_7b` | Kaggle T4×2 | 1000 | bf16 | not yet run — replaces the broken legacy run |
-| `project_kaggle_gptj_6b` | Kaggle T4×2 | 1000 | bf16 | not yet run |
-| `project_kaggle_llama2_7b` | Kaggle T4×2 | 1000 | bf16 | not yet run — **needs HF gated access + `login()` cell at top** |
+| `project_smoke_gpt2/` | **`all_variants.ipynb`** (new unified, 2026-05-29) — replaces the 2026-05-28 `project_smoke_gpt2.ipynb` + 6 variant files | 50 | fp16 | ready; not yet run |
+| `project_colab_qwen25_05b/` | **`all_variants.ipynb`** (new unified, 2026-05-29) — runs alongside the older `project_colab_qwen25_05b.ipynb` | 300 | bf16 | ready; not yet run — **headline ablation** |
+| `project_colab_tinyllama_11b/` | `project_colab_tinyllama_11b.ipynb` (per-model, 2026-05-28) | 500 | bf16 | not yet run |
+| `project_colab_qwen25_3b/` | `project_colab_qwen25_3b.ipynb` (per-model, 2026-05-28) | 500 | bf16 | not yet run — **mid-eval primary model, target AUROC 0.673** |
+| `project_colab_opt_27b/` | `project_colab_opt_27b.ipynb` (per-model, 2026-05-28) | 500 | bf16 | not yet run |
+| `project_kaggle_falcon_7b/` | `project_kaggle_falcon_7b.ipynb` (per-model, 2026-05-28) | 1000 | bf16 | not yet run — replaces the broken legacy run |
+| `project_kaggle_gptj_6b/` | `project_kaggle_gptj_6b.ipynb` (per-model, 2026-05-28) | 1000 | bf16 | not yet run |
+| `project_kaggle_llama2_7b/` | `project_kaggle_llama2_7b.ipynb` (per-model, 2026-05-28) | 1000 | bf16 | not yet run — **needs HF gated access + `login()` cell at top** |
+
+The 6 non-gpt2/qwen0.5 directories will be migrated to `all_variants.ipynb` only if the gpt2 + Qwen-0.5B ablation succeeds (E ≥ A + 0.02 AUROC; K > E).
 
 ### Hardware envelope
 
@@ -116,6 +123,9 @@ Each notebook drops these into its working directory when run:
 8. **Dataset namespace fix** (2026-05-28): every new notebook uses `safe_load_first(...)` with namespaced + legacy fallback. Don't revert to bare IDs.
 9. **BLOCK 6.5 dataset save** (2026-05-28): every notebook now saves the full pre-split dataset to JSON. Don't remove this — downstream ablations depend on it.
 10. **Legacy root-level `project_*.ipynb` notebooks are deprecated.** Run the new per-directory fleet instead. The legacy files are kept in the repo for diff reference only.
+11. **Unified `all_variants.ipynb` design (2026-05-29)** is one notebook per model that does: data-gen → F1–F10 feature extraction → 12 MLP variant trainings → consolidated single-file results JSON. **Resume-safe**: every stage skipped if its output file already exists, so Colab disconnects don't waste work.
+12. **Feature catalogue extended (2026-05-29)** with 9 features from 2024–2026 literature, none colliding with HalluShift: F1 Lookback Ratio, F2 Attention-Sink, F3 EigenScore-Lite, F4 ICR Score, F5 Logit-Lens JSD, F6 Head Entropy, F7 Max-Margin, F8 Token Rank, F10 Intra-Layer Dispersion. F9 SAPLMA probe deferred.
+13. **HalluShift comparison locked (2026-05-29)**: estimated similarity 8–18%; her weak spots are HaluEval-Summ (52) and HaluEval-Dialogue (77); she is current public SOTA on TruthfulQA / TriviaQA / CoQA / TydiQA / HaluEval-QA at Llama-2-7B in the live-generation regime. STATUS.md §3 has 3 mis-glossed feature definitions (Issue #10) that need patching before any chapter goes out.
 
 ---
 
