@@ -232,6 +232,17 @@ Code changes (Issue #1–#4 above) are deferred to **Session 1 of PLAN.md**, whi
 6. **Variant list (12)** — A: canonical only; B: +D_mean; C: +V_last; D: +H_mean; E: +D_mean+V_last+H_mean (MIND+ headline); F: +F1; G: +F5; H: +F7; I: +F1+F5+F7 (recommended trio); J: +all 9 F-features; K: E + trio (F1+F5+F7); L: everything. Easy to extend by editing `VARIANTS` dict in the notebook.
 7. **F9 (SAPLMA mid-layer probe) deferred** — it requires a separately trained linear probe on labeled data; current pipeline has no place to inject this training step yet.
 
+### 2026-05-29 session — gpt2 ablation run + SOTA baselines notebook (late)
+1. **gpt2 all_variants ran end-to-end at 500/class.** 1000 records, all 9 F-features extracted with 0 failures (SDPA fix held). 12 variants trained + evaluated on Wikipedia held-out + all 7 downstream datasets. Total ~33 min on Colab T4.
+2. **Headline finding for gpt2: variants don't separate at this scale.** Wikipedia AUROC range 0.32–0.51 across all 12 variants (most have F1=0 because the MLPs collapse on a 200-sample test). Multi-task avg AUROC 0.40–0.49, with no consistent winner — best variant rotates between A / C / D / F / L across datasets. Variant C (canonical + V_last) wins by tiniest margin at avg 0.490. **Conclusion: gpt2 results are diagnostic, not scientific. Pipeline is verified correct; signal will emerge on bigger backbones.**
+3. **Created `Code/project_smoke_gpt2/baselines_sota.ipynb`** — faithful re-implementations of 4 SOTA baselines on gpt2 against the SAME 7-dataset eval suite. Reuses `gpt2_smoke_dataset_full.json` (same 500/class MIND data, same seed=42 train/test split as the variants) so AUROCs are directly comparable.
+   * **SAPLMA** (Azaria & Mitchell 2023) — MLP probe `768→256→128→64→1` on layer-7 last-token hidden state.
+   * **HaloScope** (Du et al. NeurIPS 2024) — official repo's pipeline: spectral score → percentile pseudo-labels → non-linear probe `768→1024→1`. Sweeps (layer × k × sign × threshold) on val.
+   * **EigenScore (INSIDE)** (Chen et al. ICLR 2024) — K=10 stochastic samples per query, K×K covariance + 1e-3 ridge, score = `mean(log10(σ))`. K=3 with 100-sample cap on multi-task eval to keep cost manageable.
+   * **HalluShift** (Dasgupta 2025, the senior's work) — exact 31-d feature vector (5 Wasserstein + 5 cosine on hidden states + 5 + 5 on attentions + 11 token-prob), CombinedNN with 4 parallel embedding heads, loss = BCE + 0.4·(1−acc), AdamW lr=1e-4.
+4. **Methodology cross-checked against official GitHub repos** for HaloScope, INSIDE, HalluShift. Three of my prior assumptions were wrong (SAPLMA arch, EigenScore covariance shape, HalluShift's loss type) — all now corrected.
+5. **Lookback Lens + Semantic Entropy deferred to Batch 2** — will be added once Batch 1 results land. Semantic Entropy needs a small NLI model loaded too.
+
 ---
 
 ## 9. Results log
