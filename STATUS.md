@@ -128,8 +128,18 @@ E:\Dessertation\
     │   └── project_kaggle_llama2_7b.ipynb
     ├── project_kaggle_gptj_6b\            <-- 2026-05-28 NEW (NOT YET RUN). 1000/class bf16.
     │   └── project_kaggle_gptj_6b.ipynb
-    ├── project_kaggle_falcon_7b\          <-- 2026-05-28 NEW (NOT YET RUN). 1000/class bf16. Replaces legacy root-level falcon notebook.
-    │   └── project_kaggle_falcon_7b.ipynb
+    ├── project_kaggle_falcon_7b\          <-- 2026-05-30 split into 01+02+03. 1000/class bf16.
+    │   ├── 01_data_generation.ipynb
+    │   ├── 02_all_variants.ipynb
+    │   └── 03_baselines_sota.ipynb
+    ├── project_kaggle_mistral_7b\         <-- 2026-05-30 NEW. mistralai/Mistral-7B-v0.1. 1000/class bf16.
+    │   ├── 01_data_generation.ipynb
+    │   ├── 02_all_variants.ipynb
+    │   └── 03_baselines_sota.ipynb
+    ├── project_kaggle_opt_67b\            <-- 2026-05-30 NEW. facebook/opt-6.7b. 1000/class bf16. SAPLMA original backbone.
+    │   ├── 01_data_generation.ipynb
+    │   ├── 02_all_variants.ipynb
+    │   └── 03_baselines_sota.ipynb
     ├── project_colab_tinyllama_11b\       <-- 2026-05-28 NEW (NOT YET RUN). 500/class bf16.
     │   └── project_colab_tinyllama_11b.ipynb
     ├── project_colab_qwen25_3b\           <-- 2026-05-28 NEW (NOT YET RUN). 500/class bf16. Replaces legacy qwen2.5_3b notebook.
@@ -253,6 +263,15 @@ Code changes (Issue #1–#4 above) are deferred to **Session 1 of PLAN.md**, whi
 5. **Runtime targets** (per-model end-to-end, both notebooks):
    * Qwen-3B Colab: all_variants ~50 min + baselines_sota ~70 min ≈ **~2 h** combined.
    * Llama-2-7B Kaggle: all_variants ~65 min + baselines_sota ~85 min ≈ **~2.5 h** combined (well under Kaggle 9h cap).
+
+### 2026-05-30 session — data-generation phase locked in (6 large-model fleet)
+1. **All large models (≥3B) bumped to 1000 samples / class** (was 200): Llama-2-7B, Falcon-7B, GPT-J-6B. 5× more training data, comparable to MIND/HalluShift's 5k-class scale.
+2. **Added two widely-cited models** to the fleet:
+   * **`mistralai/Mistral-7B-v0.1`** — most-cited non-Llama 7B in 2024-25 papers (HalluShift, INSIDE, Semantic Entropy, DoLa). Open. 32 layers (SAPLMA=20, EigenScore=16). → `project_kaggle_mistral_7b/`
+   * **`facebook/opt-6.7b`** — original SAPLMA backbone + HalluShift comparison. Open. 32 layers (SAPLMA=20, EigenScore=16). → `project_kaggle_opt_67b/`
+3. **All 6 large models split into 3-notebook layout** (`01_data_generation` + `02_all_variants` + `03_baselines_sota`) for parallel-account execution. Downstream subsample cap = 0.2 across all to keep multi-task eval cost bounded despite 5× larger training set.
+4. **Schema-sufficiency note for `<tag>_dataset_full.json`** (important for future-proofing): each record holds `{text, label, embedding, D_mean, V_last, H_mean, entity, title}`. **This is sufficient for re-implementing any of the major hallucination-detection methods** — they all take (text, label) and re-run the LLM to extract their specific features. No need to re-generate data for adding new baselines. The only exceptions are sampling-based methods (SelfCheckGPT, Semantic Entropy) which need K samples per test prompt at evaluation time — but those K samples are generated on-the-fly in `03_baselines_sota` (EigenScore already does this), not stored in dataset_full.
+5. **Data-generation phase considered complete** for the 6-model fleet. Per-model runtime estimate for `01_data_generation.ipynb` alone on Kaggle T4×2: ~100 min for 2000 records (1000/class). Total GPU time across 6 Kaggle models: ~10 h (well within 30 h/week budget; can be parallelised across the student's multiple Kaggle accounts).
 
 ---
 

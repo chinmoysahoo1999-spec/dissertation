@@ -47,6 +47,19 @@ In priority order:
 1. **Run `project_smoke_gpt2/baselines_sota.ipynb`** on Colab — this is the cross-method comparison. Will produce `gpt2_smoke_baselines_results.json`. Compare against `gpt2_smoke_all_variants_results.json` to see if any of our 12 variants beats HalluShift / HaloScope / SAPLMA / EigenScore on the same backbone. **Expected runtime: ~60–90 min** (the dataset/feature cache reuses Stage 2 from all_variants so no data-gen; HaloScope sweep + EigenScore K=10 wiki eval dominate the cost).
 1b. **(NEW 2026-05-30) `project_colab_qwen25_3b/` is the headline large-model run on Colab.** Both `all_variants.ipynb` (300/class, ~50 min) and `baselines_sota.ipynb` (~70 min) deployed. Combined ~2h on Colab T4 — fits a single session. Paste both result JSONs back when done; assistant will repeat the comparison table at Qwen-3B scale (the gpt2 results were too noisy — Qwen-3B should give real signal).
 1c. **(NEW 2026-05-30) `project_kaggle_llama2_7b/` is the gated large-model run on Kaggle T4×2.** Both notebooks deployed (200/class, combined ~2.5h). Requires HF gated-access approval at https://huggingface.co/meta-llama/Llama-2-7b-hf and pasting an HF token in BLOCK 0 of each notebook.
+
+1d. **(NEW 2026-05-30 final) Data-generation phase LOCKED IN for 6-model fleet.** Sample size bumped to 1000/class across all large models. Two new models added: Mistral-7B-v0.1 and OPT-6.7B. All split into 3-notebook layout. **Next student action: run `01_data_generation.ipynb` for each of the 6 large models, one at a time on Kaggle (or in parallel across Kaggle accounts).** Per-model runtime ~100 min. Total GPU time ~10h across all 6 models, well within Kaggle 30h/week budget. After 01 produces `<tag>_dataset_full.json`, the analysis notebooks 02 and 03 can run in parallel on two more accounts.
+
+| Model | Where | 01 runtime | Gated? |
+|---|---|---|---|
+| Qwen-3B | Colab T4 | ~50 min (already ran with old config) | no |
+| Llama-2-7B | Kaggle T4×2 | ~100 min | YES (license + token) |
+| Falcon-7B | Kaggle T4×2 | ~100 min | no |
+| GPT-J-6B | Kaggle T4×2 | ~100 min | no |
+| Mistral-7B-v0.1 | Kaggle T4×2 | ~100 min | no |
+| OPT-6.7B | Kaggle T4×2 | ~100 min | no |
+
+**Schema-sufficiency confirmed.** `<tag>_dataset_full.json` contains `{text, label, embedding, D_mean, V_last, H_mean, entity, title}` per record. This is sufficient input for ANY future baseline that takes (text, label) and re-runs the LLM to extract its own features. The 4 baselines in `03_baselines_sota.ipynb` (SAPLMA, HaloScope, EigenScore, HalluShift) all work this way; any future addition (Lookback Lens, Semantic Entropy, SelfCheckGPT, etc.) will work identically. **No need to re-run data-gen when adding new baselines.**
 2. **Run `project_colab_qwen25_05b/all_variants.ipynb`** on Colab T4 (~50–60 min at 500/class). This is the **headline ablation** since 0.5B is the smallest backbone expected to show real signal. The acceptance criterion is **E ≥ A + 0.02** (the original MIND+ story holds) AND ideally **K > E** (adding F1+F5+F7 on top of E gives more lift than E alone). If yes, the feature stack is real — scale up to bigger models. If no, rethink the feature stack before burning GPU budget.
 3. **Apply for Llama-2-7B HuggingFace gated access** at https://huggingface.co/meta-llama/Llama-2-7b-hf (approval typically < 1 hour). Required before `project_kaggle_llama2_7b/` can run.
 4. **(Conditional on step 2 passing)** Migrate the other 6 model notebooks to the unified `all_variants.ipynb` design. The builder script is `outputs/build_all_variants.py` (in the assistant's scratch directory) — extending it is a 2-line edit to the `MODELS` list.
