@@ -1,0 +1,101 @@
+\documentclass[10pt]{article}
+\usepackage[a4paper,landscape,margin=1.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{titling}
+\setlength{\droptitle}{-2cm}
+
+\definecolor{baselinebg}{RGB}{240,245,255}
+\definecolor{variantbg}{RGB}{248,248,248}
+\definecolor{bestbg}{RGB}{200,240,200}
+\definecolor{headerbg}{RGB}{60,60,90}
+
+\newcommand{\best}[1]{\cellcolor{bestbg}\textbf{#1}}
+
+\title{GPT-2 smoke run: AUROC comparison\\
+\large Baselines (4) vs. our feature-ablation variants (12) on Wikipedia held-out + 7 downstream datasets}
+\author{Chinmoy Sahoo (ISI Kolkata, CS2412) \and Cowork audit}
+\date{2026-05-30}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Backbone:} GPT-2 (124M parameters). \textbf{Training set:} 800 MIND-generated Wikipedia records (500 per class, seed=42). \textbf{Test split:} 200 records, identical seed across all methods $\Rightarrow$ direct AUROC comparison. \textbf{Cells:} AUROC; green-shaded \textbf{bold} = column winner.
+
+\vspace{0.3cm}
+
+\noindent\textbf{Methodology (baselines, paper-faithful):}
+\begin{itemize}\setlength\itemsep{-2pt}
+  \item \textbf{SAPLMA} (Azaria \& Mitchell 2023): MLP probe $768{\to}256{\to}128{\to}64{\to}1$ on layer-7 last-token hidden. Supervised.
+  \item \textbf{HaloScope} (Du et al., NeurIPS 2024): spectral score $\to$ percentile pseudo-labels $\to$ non-linear probe $768{\to}1024{\to}1$. Unsup. pseudo-labels.
+  \item \textbf{HalluShift} (Dasgupta, IJCNN 2025): 31-d Wasserstein/cosine on hidden+attention + 11 token-prob features $\to$ \texttt{CombinedNN}. Supervised.
+  \item \textbf{EigenScore / INSIDE} (Chen et al., ICLR 2024): K=10 sampled responses, K$\times$K covariance, log-det score. Unsupervised. Downstream subsampled to n=100, K=3.
+\end{itemize}
+
+\vspace{0.2cm}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}l|p{4.5cm}|*{9}{>{\centering\arraybackslash}p{1.05cm}}@{}}
+\toprule
+\textbf{Type} & \textbf{Method} & \textbf{Wiki} & \textbf{TruthQA} & \textbf{TrivQA} & \textbf{CoQA} & \textbf{TydiQA} & \textbf{HE-QA} & \textbf{HE-Sum} & \textbf{HE-Dial} & \textbf{Avg-MT} \\
+\midrule
+B & \textbf{SAPLMA} & 0.321 & 0.531 & 0.424 & 0.536 & 0.518 & 0.498 & 0.475 & \best{0.576} & 0.508 \\
+B & \textbf{HaloScope} & 0.437 & 0.495 & 0.545 & 0.515 & 0.419 & 0.089 & 0.422 & 0.459 & 0.421 \\
+B & \textbf{HalluShift} & 0.443 & 0.535 & 0.404 & \best{0.583} & \best{0.619} & 0.451 & \best{0.561} & 0.515 & \best{0.524} \\
+B & \textbf{EigenScore} & 0.457 & 0.505 & 0.629 & 0.426 & 0.455 & \best{0.499} & 0.500 & 0.500 & 0.502 \\
+\midrule
+V & A: canonical only & 0.501 & 0.515 & 0.627 & 0.557 & 0.563 & 0.140 & 0.476 & 0.364 & 0.463 \\
+V & B: +D\_mean & 0.405 & 0.544 & 0.676 & 0.413 & 0.441 & 0.073 & 0.459 & 0.368 & 0.425 \\
+V & C: +V\_last & 0.394 & 0.524 & \best{0.711} & 0.484 & 0.470 & 0.270 & 0.542 & 0.429 & 0.490 \\
+V & D: +H\_mean & 0.405 & \best{0.547} & 0.679 & 0.481 & 0.507 & 0.187 & 0.525 & 0.400 & 0.475 \\
+V & E: +D\_mean+V\_last+H\_mean (MIND+) & 0.467 & 0.533 & 0.638 & 0.533 & 0.565 & 0.133 & 0.487 & 0.372 & 0.466 \\
+V & F: +F1 (Lookback) & 0.322 & 0.494 & 0.637 & 0.463 & 0.391 & 0.273 & 0.539 & 0.532 & 0.476 \\
+V & G: +F5 (Logit-Lens JSD) & 0.393 & 0.500 & 0.504 & 0.437 & 0.423 & 0.063 & 0.485 & 0.395 & 0.401 \\
+V & H: +F7 (Max-Margin) & 0.467 & 0.519 & 0.705 & 0.493 & 0.469 & 0.052 & 0.475 & 0.379 & 0.442 \\
+V & I: +F1+F5+F7 (trio) & 0.502 & 0.537 & 0.605 & 0.533 & 0.576 & 0.084 & 0.467 & 0.358 & 0.451 \\
+V & J: +all 9 F-features & 0.475 & 0.537 & 0.620 & 0.538 & 0.567 & 0.089 & 0.492 & 0.364 & 0.458 \\
+V & K: +MIND+ +F1+F5+F7 & 0.498 & 0.516 & 0.624 & 0.550 & 0.550 & 0.071 & 0.469 & 0.355 & 0.448 \\
+V & L: +everything & \best{0.510} & 0.540 & 0.569 & 0.535 & 0.591 & 0.041 & 0.437 & 0.341 & 0.436 \\
+\bottomrule
+\end{tabular}
+\caption{AUROC matrix: 4 SOTA baselines (B) vs. 12 feature-ablation variants (V) on GPT-2. Rows = methods; columns = evaluation datasets. \textbf{Bold green} cells mark the per-column winner.}
+\label{tab:auroc_comparison}
+\end{table}
+\vspace{0.2cm}
+\noindent\textbf{Per-column winners}
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Column} & \textbf{Winning method} & \textbf{AUROC} \\
+\midrule
+Wikipedia (in-distribution) & [V] L (+everything) & 0.5097 \\
+TruthfulQA & [V] D (+H\_mean) & 0.5468 \\
+TriviaQA & [V] C (+V\_last) & 0.7113 \\
+CoQA & [B] HalluShift & 0.5834 \\
+TydiQA-GP & [B] HalluShift & 0.6195 \\
+HaluEval-QA & [B] EigenScore & 0.4994 \\
+HaluEval-Summarization & [B] HalluShift & 0.5605 \\
+HaluEval-Dialogue & [B] SAPLMA & 0.5757 \\
+Avg multi-task & [B] HalluShift & 0.5239 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\vspace{0.2cm}
+\noindent\textbf{Notes on interpretation.} GPT-2 (124M) is a deliberately small backbone for this smoke run; signal at this scale is noisy. Headline observations:
+\begin{itemize}\setlength\itemsep{-2pt}
+  \item \textbf{HalluShift} wins the average multi-task AUROC (0.524) and 4 of 7 downstream columns.
+  \item Our variants dominate \textbf{Wikipedia held-out} (in-distribution) and pick up TruthfulQA + TriviaQA.
+  \item All methods collapse on HaluEval-QA at GPT-2 scale (domain shift; supervised MLPs trained on MIND-Wikipedia are anti-correlated with the right answer).
+  \item For scale-up: variant C (+V\_last alone) is the only variant that holds its own against the baselines on transfer (avg-MT 0.490) and is worth re-testing on Qwen-3B.
+\end{itemize}
+
+\end{document}

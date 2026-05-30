@@ -243,6 +243,17 @@ Code changes (Issue #1–#4 above) are deferred to **Session 1 of PLAN.md**, whi
 4. **Methodology cross-checked against official GitHub repos** for HaloScope, INSIDE, HalluShift. Three of my prior assumptions were wrong (SAPLMA arch, EigenScore covariance shape, HalluShift's loss type) — all now corrected.
 5. **Lookback Lens + Semantic Entropy deferred to Batch 2** — will be added once Batch 1 results land. Semantic Entropy needs a small NLI model loaded too.
 
+### 2026-05-30 session — large-model rollout (Qwen-3B + Llama-2-7B)
+1. **`all_variants.ipynb` deployed to project_colab_qwen25_3b/ and project_kaggle_llama2_7b/.**
+   * Qwen-3B → Colab Free T4, 300 samples/class, bf16, layer 18 for F5 logit-lens.
+   * Llama-2-7B → Kaggle Free T4×2, 200 samples/class, bf16, layer 16 for F5 logit-lens. Gated model — student must approve license + paste HF token in the new BLOCK 0 cell.
+2. **`baselines_sota.ipynb` deployed to same two directories**, parameterised from the gpt2 source. SAPLMA layer choice: Qwen-3B = 22 (~60% depth, matches the OPT-6.7B fraction from the SAPLMA paper); Llama-2-7B = 16 (the paper's actual best layer for this model). EigenScore middle layer = 18 for Qwen-3B, 16 for Llama-2-7B. HaloScope sweeps all model layers.
+3. **HalluShift Wasserstein speedup**: replaced `scipy.stats.wasserstein_distance` (per-token Python loop) with the closed-form 1D `sum|cumsum(P) − cumsum(Q)|` vectorised across token positions. Exactly equivalent for discrete probability distributions on integer support — no methodology change. ~5–10× faster on hidden_dim ≥ 2560 (critical for fitting baselines_sota in the 2–3h budget on Qwen-3B/Llama-2-7B).
+4. **EigenScore batched generation** (`num_return_sequences=K`) from the gpt2 fix is preserved in both new notebooks — matches the official D2I-ai/eigenscore repo.
+5. **Runtime targets** (per-model end-to-end, both notebooks):
+   * Qwen-3B Colab: all_variants ~50 min + baselines_sota ~70 min ≈ **~2 h** combined.
+   * Llama-2-7B Kaggle: all_variants ~65 min + baselines_sota ~85 min ≈ **~2.5 h** combined (well under Kaggle 9h cap).
+
 ---
 
 ## 9. Results log
