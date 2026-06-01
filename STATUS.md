@@ -275,6 +275,22 @@ Code changes (Issue #1–#4 above) are deferred to **Session 1 of PLAN.md**, whi
 6. **New shared utility: `Code/eval_datasets/00_download_eval_datasets.ipynb`**. Run ONCE per HF account to download all 7 multi-task eval datasets (TruthfulQA, TriviaQA, CoQA, TydiQA, HaluEval-{QA,Summ,Dialog}) and save them as `eval_*.parquet` files plus a bundled `eval_datasets.zip`. Upload the parquet files alongside `<tag>_dataset_full.json` for each model run.
 7. **All 02 and 03 notebooks updated with `_find_local_parquet(...)` shortcut** — `safe_load_first(...)` now checks 7 candidate paths for local parquet files (current dir, `./eval_datasets/`, `/kaggle/input/dissertation-eval-datasets/`, `/kaggle/working/`, `/content/drive/MyDrive/eval_datasets/`, `/content/`) before falling back to HuggingFace download. Output prints `(LOCAL: <path>)` when the local file was used and `(HF loader #N)` when it fell back. Eliminates ~5 min HF dataset resolution per run × 6 models × 2 notebooks = 60 min total savings, plus immunity to HF rate-limit / namespace issues.
 
+### 2026-05-30 session (final, late) — 10 eval datasets + 6 baselines + auto-download
+
+1. **3 additional eval datasets added** (NQ-Open, HotpotQA distractor, PopQA) → **10 total** multi-task datasets. Picked by paper citation frequency in 2024-25 hallucination literature. All 27 deployed analysis notebooks evaluate on all 10.
+2. **HaloScope batch fix**: `HALOSCOPE_PROBE_BATCH = 256 → 512` to match official repo exactly.
+3. **2 additional SOTA baselines integrated** → **6 baselines** in every `03_baselines_sota.ipynb`:
+   * **Lookback Lens** (Chuang et al., EMNLP 2024, [github.com/voidism/Lookback-Lens](https://github.com/voidism/Lookback-Lens)) — per-(layer, head) attention lookback ratio averaged over generation positions → Logistic Regression. Adds the **attention paradigm**. Cheap (~5 min extra runtime).
+   * **Semantic Entropy** (Farquhar et al., **Nature 2024**) — K=5 stochastic responses, NLI clustering via `cross-encoder/nli-deberta-v3-base`, Shannon entropy over cluster sizes. Adds the **NLI-clustering paradigm**. The most-cited 2024 hallucination paper. Costs ~30 min extra per model.
+4. **Baseline paradigm coverage rationale**: SAPLMA = simplest supervised probe (floor); HaloScope = current best unsupervised (NeurIPS 2024); EigenScore = best sampling-based with geometric scoring (ICLR 2024); HalluShift = the senior's work (mandatory comparison); Lookback Lens = attention-based supervised; Semantic Entropy = sampling-based with NLI clustering. **Four paradigms × covered methodologically**.
+5. **Auto-download cell on every notebook**: Colab → browser download per file via `google.colab.files.download`; Kaggle → files persist in `/kaggle/working/` and are downloaded via Output panel; local Jupyter → just lists the working directory. Slimmed list: `_results.json` + `.pth` checkpoints (small). Excluded: `dataset_with_features.json` (large, regeneratable in ~10 min).
+6. **`dataset_full.json` schema-sufficiency re-confirmed**: each record holds (text, label, embedding, D_mean, V_last, H_mean, entity, title). Any future baseline that takes (text, label) and re-runs the LLM can be added without re-generating data. Multi-sample baselines (SelfCheckGPT, INSIDE, Semantic Entropy) generate K samples per query at evaluation time and don't need stored multi-sample data.
+7. **Final runtime estimate** for the 6-model fleet (with 6 baselines × 10 datasets):
+   * Qwen-3B Colab: 02 ~50 min, 03 ~95 min → ~95 min parallel wall clock.
+   * 7B Kaggle models (Llama-2, Falcon, Mistral, OPT-6.7B): 02 ~120 min, 03 ~170 min → ~170 min parallel each.
+   * GPT-J-6B Kaggle: 02 ~100 min, 03 ~150 min → ~150 min parallel.
+   * **Total wall clock if parallelised across 2 Kaggle accounts: ~15.5 h. Total GPU time: ~24 h** (within Kaggle 30 h/week budget).
+
 ---
 
 ## 9. Results log

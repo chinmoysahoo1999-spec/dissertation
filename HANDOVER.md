@@ -76,6 +76,40 @@ In priority order:
 | Colab | Upload zip to session, then `!unzip eval_datasets.zip` | Current working dir |
 
 The `_find_local_parquet(label)` function inside every `02` and `03` notebook checks 7 candidate paths automatically. If a parquet is found, prints `(LOCAL: <path>)` and skips the HF download. If not found, prints `(HF loader #N)` and falls back. **No code change required per model** — the same notebook works in both modes.
+
+### 6 SOTA baselines + 10 datasets locked in (2026-05-30 final)
+
+`03_baselines_sota.ipynb` evaluates **6 baselines** on **10 datasets** + Wikipedia held-out:
+
+| # | Baseline | Paradigm | Paper / Repo |
+|---|---|---|---|
+| 1 | SAPLMA | supervised, single-layer probe | Azaria & Mitchell 2023 |
+| 2 | HaloScope | unsupervised, spectral + non-linear probe | Du et al. NeurIPS 2024 — [github.com/deeplearning-wisc/haloscope](https://github.com/deeplearning-wisc/haloscope) |
+| 3 | EigenScore (INSIDE) | sampling-based, geometric (K×K cov log-det) | Chen et al. ICLR 2024 — [github.com/D2I-ai/eigenscore](https://github.com/D2I-ai/eigenscore) |
+| 4 | HalluShift | supervised, Wasserstein + token-prob | Dasgupta IJCNN 2025 — [github.com/sharanya-dasgupta001/hallushift](https://github.com/sharanya-dasgupta001/hallushift) |
+| 5 | **Lookback Lens** | supervised, **attention-based** | Chuang et al. EMNLP 2024 — [github.com/voidism/Lookback-Lens](https://github.com/voidism/Lookback-Lens) |
+| 6 | **Semantic Entropy** | sampling-based, **NLI clustering** | Farquhar et al. **Nature 2024** |
+
+Datasets: TruthfulQA, TriviaQA, CoQA, TydiQA-GP, HaluEval-{QA, Summ, Dialog}, NQ-Open, HotpotQA distractor, PopQA. Plus Wikipedia held-out (in-distribution).
+
+**Why this exact set of 6 baselines:**
+
+* SAPLMA — establishes a *floor*: simplest possible supervised probe. Anything fancier must beat raw hidden + MLP.
+* HaloScope — current best **unsupervised** detector. Critical for the "what if no labels?" thread.
+* EigenScore — current best **sampling-based** detector with geometric scoring. Different paradigm from hidden-state methods.
+* HalluShift — the *senior's* work. The dissertation must beat this on Llama-2-7B to claim contribution. Required.
+* Lookback Lens — adds the **attention paradigm**. Cheap, complements hidden-state and sampling baselines.
+* Semantic Entropy — the *Nature 2024* paper, most-cited 2024 hallucination paper. Almost every recent work compares against it.
+
+### Auto-download behavior (per notebook)
+
+| Notebook | Downloads |
+|---|---|
+| `01_data_generation.ipynb` | `<tag>_dataset_full.json` |
+| `02_all_variants.ipynb` | `<tag>_all_variants_results.json` + 12 × `<tag>_variant_<A..L>_best.pth` |
+| `03_baselines_sota.ipynb` | `<tag>_baselines_results.json` + 4 × `.pth` (SAPLMA, HaloScope, HalluShift) + 1 × `.pkl` (Lookback Lens) |
+
+Excluded from auto-download (regeneratable, large): `<tag>_dataset_with_features.json` (~100 MB+), `<tag>_baseline_feature_cache.json` (~150 MB+ to ~1 GB).
 2. **Run `project_colab_qwen25_05b/all_variants.ipynb`** on Colab T4 (~50–60 min at 500/class). This is the **headline ablation** since 0.5B is the smallest backbone expected to show real signal. The acceptance criterion is **E ≥ A + 0.02** (the original MIND+ story holds) AND ideally **K > E** (adding F1+F5+F7 on top of E gives more lift than E alone). If yes, the feature stack is real — scale up to bigger models. If no, rethink the feature stack before burning GPU budget.
 3. **Apply for Llama-2-7B HuggingFace gated access** at https://huggingface.co/meta-llama/Llama-2-7b-hf (approval typically < 1 hour). Required before `project_kaggle_llama2_7b/` can run.
 4. **(Conditional on step 2 passing)** Migrate the other 6 model notebooks to the unified `all_variants.ipynb` design. The builder script is `outputs/build_all_variants.py` (in the assistant's scratch directory) — extending it is a 2-line edit to the `MODELS` list.
