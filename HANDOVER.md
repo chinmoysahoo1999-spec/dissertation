@@ -1,6 +1,6 @@
 # HANDOVER.md — Next-session briefing
 
-_Written: 2026-05-28; updated 2026-05-29. Author: Cowork assistant. For: the next Cowork session._
+_Written: 2026-05-28; updated 2026-06-01. Author: Cowork assistant. For: the next Cowork session._
 
 This document is the first thing the next session should read. It is intentionally short and direct. The longer state lives in `STATUS.md` (snapshot) and `PLAN.md` (roadmap) — this file just gives the new session enough context to pick up the thread without re-reading both.
 
@@ -77,9 +77,9 @@ In priority order:
 
 The `_find_local_parquet(label)` function inside every `02` and `03` notebook checks 7 candidate paths automatically. If a parquet is found, prints `(LOCAL: <path>)` and skips the HF download. If not found, prints `(HF loader #N)` and falls back. **No code change required per model** — the same notebook works in both modes.
 
-### 6 SOTA baselines + 10 datasets locked in (2026-05-30 final)
+### 5 SOTA baselines + 10 datasets locked in (Semantic Entropy removed 2026-06-01) (2026-05-30 final)
 
-`03_baselines_sota.ipynb` evaluates **6 baselines** on **10 datasets** + Wikipedia held-out:
+`03_baselines_sota.ipynb` evaluates **5 baselines** on **10 datasets** + Wikipedia held-out:
 
 | # | Baseline | Paradigm | Paper / Repo |
 |---|---|---|---|
@@ -88,18 +88,18 @@ The `_find_local_parquet(label)` function inside every `02` and `03` notebook ch
 | 3 | EigenScore (INSIDE) | sampling-based, geometric (K×K cov log-det) | Chen et al. ICLR 2024 — [github.com/D2I-ai/eigenscore](https://github.com/D2I-ai/eigenscore) |
 | 4 | HalluShift | supervised, Wasserstein + token-prob | Dasgupta IJCNN 2025 — [github.com/sharanya-dasgupta001/hallushift](https://github.com/sharanya-dasgupta001/hallushift) |
 | 5 | **Lookback Lens** | supervised, **attention-based** | Chuang et al. EMNLP 2024 — [github.com/voidism/Lookback-Lens](https://github.com/voidism/Lookback-Lens) |
-| 6 | **Semantic Entropy** | sampling-based, **NLI clustering** | Farquhar et al. **Nature 2024** |
+| ~~6~~ | ~~**Semantic Entropy**~~ — REMOVED 2026-06-01 (NLI loader + K-sample clustering added ~3-4 hr per 7B model; broke 2-3 h per-session budget) | sampling-based, NLI clustering | Farquhar et al. Nature 2024 |
 
 Datasets: TruthfulQA, TriviaQA, CoQA, TydiQA-GP, HaluEval-{QA, Summ, Dialog}, NQ-Open, HotpotQA distractor, PopQA. Plus Wikipedia held-out (in-distribution).
 
-**Why this exact set of 6 baselines:**
+**Why this exact set of 5 baselines (after Semantic Entropy removal on 2026-06-01):**
 
 * SAPLMA — establishes a *floor*: simplest possible supervised probe. Anything fancier must beat raw hidden + MLP.
 * HaloScope — current best **unsupervised** detector. Critical for the "what if no labels?" thread.
 * EigenScore — current best **sampling-based** detector with geometric scoring. Different paradigm from hidden-state methods.
 * HalluShift — the *senior's* work. The dissertation must beat this on Llama-2-7B to claim contribution. Required.
 * Lookback Lens — adds the **attention paradigm**. Cheap, complements hidden-state and sampling baselines.
-* Semantic Entropy — the *Nature 2024* paper, most-cited 2024 hallucination paper. Almost every recent work compares against it.
+* ~~Semantic Entropy — Nature 2024, most-cited 2024 hallucination paper.~~ **REMOVED 2026-06-01** for runtime reasons (cross-encoder NLI inference between every K-sample pair); SE is acknowledged in the dissertation as published prior art but not run as a baseline. Eval-time budget on 7B models reallocated to LookbackLens and the multi-task eval extension.
 
 ### Auto-download behavior (per notebook)
 
@@ -138,72 +138,32 @@ Excluded from auto-download (regeneratable, large): `<tag>_dataset_with_features
 | GitHub remote | `https://github.com/chinmoysahoo1999-spec/dissertation.git`, branch `main` |
 | Plan + Status + Handover | `E:\Dessertation\PLAN.md`, `E:\Dessertation\STATUS.md`, `E:\Dessertation\HANDOVER.md` (this file) |
 | Literature survey PDF | `E:\Dessertation\Literature_Survey_Chapter.pdf` |
-| Per-model run directories | `E:\Dessertation\Code\project_<env>_<tag>\` — each holds the `.ipynb` and the run's output files |
-| Legacy auto-generated notebooks (DEPRECATED — still have HF namespace bug) | `E:\Dessertation\Code\project_*.ipynb` at the root |
-| Notebook builder (re-runs are idempotent) | the assistant has this builder in its scratch outputs; ask the assistant to re-run it if the fleet needs to be regenerated |
-| Pinned deps | `E:\Dessertation\Code\requirements.txt` |
-| Tests | `E:\Dessertation\Code\tests\` (24 pass / 4 skip without torch) |
-
-### Per-notebook output files
-
-Each notebook drops these into its working directory when run:
-
-| File | Purpose |
-|---|---|
-| `<tag>_dataset_full.json` | every generated record (pre-split) — for offline ablations |
-| `<tag>_train.json` / `<tag>_test.json` | the 80 / 20 split used for the MLP |
-| `<tag>_checkpoint.json` | incremental save every 200 samples — resume after disconnect |
-| `<tag>_mind_plus_best.pth` | best MLP weights + scaler tensors |
-| `<tag>_results.json` | env / config / model info / metrics / timings — single-file audit |
-
-### The 8-notebook fleet (status as of 2026-05-29)
-
-| Directory | Primary notebook | Samples / class | dtype | Status |
-|---|---|---|---|---|
-| `project_smoke_gpt2/` | **`all_variants.ipynb`** (new unified, 2026-05-29) — replaces the 2026-05-28 `project_smoke_gpt2.ipynb` + 6 variant files | 50 | fp16 | ready; not yet run |
-| `project_colab_qwen25_05b/` | **`all_variants.ipynb`** (new unified, 2026-05-29) — runs alongside the older `project_colab_qwen25_05b.ipynb` | 300 | bf16 | ready; not yet run — **headline ablation** |
-| `project_colab_tinyllama_11b/` | `project_colab_tinyllama_11b.ipynb` (per-model, 2026-05-28) | 500 | bf16 | not yet run |
-| `project_colab_qwen25_3b/` | `project_colab_qwen25_3b.ipynb` (per-model, 2026-05-28) | 500 | bf16 | not yet run — **mid-eval primary model, target AUROC 0.673** |
-| `project_colab_opt_27b/` | `project_colab_opt_27b.ipynb` (per-model, 2026-05-28) | 500 | bf16 | not yet run |
-| `project_kaggle_falcon_7b/` | `project_kaggle_falcon_7b.ipynb` (per-model, 2026-05-28) | 1000 | bf16 | not yet run — replaces the broken legacy run |
-| `project_kaggle_gptj_6b/` | `project_kaggle_gptj_6b.ipynb` (per-model, 2026-05-28) | 1000 | bf16 | not yet run |
-| `project_kaggle_llama2_7b/` | `project_kaggle_llama2_7b.ipynb` (per-model, 2026-05-28) | 1000 | bf16 | not yet run — **needs HF gated access + `login()` cell at top** |
-
-The 6 non-gpt2/qwen0.5 directories will be migrated to `all_variants.ipynb` only if the gpt2 + Qwen-0.5B ablation succeeds (E ≥ A + 0.02 AUROC; K > E).
-
-### Hardware envelope
-
-* **Primary:** Kaggle Free, T4×2 (= 32 GB VRAM via `device_map="auto"`), 9-hour session cap, 30 h / week budget.
-* **Fallback:** Colab Free, single T4 (16 GB), ~12 h soft cap, frequent disconnects. Checkpoint cell already handles disconnects via `<tag>_checkpoint.json` every 200 samples.
-
+| Per-model run directories | `E:\Dessertation\Code\project_<env>_<tag
 ---
 
-## d. Decisions already made (do NOT revisit unless supervisor asks)
+## f. 2026-06-01 session delta — Semantic Entropy removed + eval-dataset time savings
 
-1. **Feature set is fixed at six (3 categories × 2 stats each).** See STATUS.md §3. No additions.
-2. **No Wasserstein-distance features, no mtp/Mps/Mg, no automated feature selection.** Originality discipline vs HalluShift (STATUS.md §4).
-3. **MLP architecture locked**: 5-layer (512 → 256 → 128 → 64 → 2), CrossEntropy loss, Adam(lr=5e-4, wd=1e-5), 10 epochs, batch size 32, 80/20 train/test split.
-4. **Sentence-Transformer MiniLM** is the gold-vs-generation scorer for open-ended QA (not BLEURT — too heavy).
-5. **HaluEval prompts truncated to 1024 tokens** to avoid OOM on long contexts.
-6. **bf16 model loading** (not int8/4bit) for the 4-model sweep. Kaggle T4×2 fits everything in bf16 without quantisation.
-7. **Per-model notebook fleet structure**: each model gets its own `Code/project_<env>_<tag>/` directory. Result JSONs land in the same directory. The assistant audits each `<tag>_results.json` after the run.
-8. **Dataset namespace fix** (2026-05-28): every new notebook uses `safe_load_first(...)` with namespaced + legacy fallback. Don't revert to bare IDs.
-9. **BLOCK 6.5 dataset save** (2026-05-28): every notebook now saves the full pre-split dataset to JSON. Don't remove this — downstream ablations depend on it.
-10. **Legacy root-level `project_*.ipynb` notebooks are deprecated.** Run the new per-directory fleet instead. The legacy files are kept in the repo for diff reference only.
-11. **Unified `all_variants.ipynb` design (2026-05-29)** is one notebook per model that does: data-gen → F1–F10 feature extraction → 12 MLP variant trainings → consolidated single-file results JSON. **Resume-safe**: every stage skipped if its output file already exists, so Colab disconnects don't waste work.
-12. **Feature catalogue extended (2026-05-29)** with 9 features from 2024–2026 literature, none colliding with HalluShift: F1 Lookback Ratio, F2 Attention-Sink, F3 EigenScore-Lite, F4 ICR Score, F5 Logit-Lens JSD, F6 Head Entropy, F7 Max-Margin, F8 Token Rank, F10 Intra-Layer Dispersion. F9 SAPLMA probe deferred.
-13. **HalluShift comparison locked (2026-05-29)**: estimated similarity 8–18%; her weak spots are HaluEval-Summ (52) and HaluEval-Dialogue (77); she is current public SOTA on TruthfulQA / TriviaQA / CoQA / TydiQA / HaluEval-QA at Llama-2-7B in the live-generation regime. STATUS.md §3 has 3 mis-glossed feature definitions (Issue #10) that need patching before any chapter goes out.
+**What changed since the last HANDOVER:**
 
----
+1. **Semantic Entropy baseline REMOVED from all 6 large-model `03_baselines_sota.ipynb` + the source `Code/project_smoke_gpt2/baselines_sota.ipynb`.** Backup of pre-removal source: `Code/project_smoke_gpt2/baselines_sota.ipynb.bak_se_remove`. Removal script: `outputs/remove_semantic_entropy.py` (re-emits all 6 copies after patching the source).
 
-## e. How to start the next session
+2. **The final baseline set is now 5:** SAPLMA · HaloScope · HalluShift · EigenScore (INSIDE) · LookbackLens.
 
-A good first message to the assistant in the next session:
+3. **Eval-dataset pre-download (`Code/eval_datasets/00_download_eval_datasets.ipynb`) time savings — quantified:**
 
-> "Read HANDOVER.md, then STATUS.md §6 (open issues) and §8 (last session). What should we run next?"
+   | Scenario | Without pre-download | With pre-download | Saved |
+   |---|---|---|---|
+   | Per model (02 + 03 each, 10 datasets) | 20.5 min HF resolve | 0.2 min parquet load | **~20 min / model** |
+   | All 6 models, single account | ~123 min | ~12 min (one 00 download + 12 parquet loads) | **~111 min ≈ 1.9 h** |
+   | All 6 models, 6 parallel accounts | ~123 min | ~63 min (6 × 00 downloads + 12 parquet loads) | **~60 min ≈ 1.0 h** |
 
-If a run has just completed, instead say:
+   Plus qualitative wins: no HF rate-limit failures under parallel runs, no dataset-namespace breakage (e.g. `truthful_qa → truthfulqa/truthful_qa`), no mid-load kernel disconnects.
 
-> "I ran `project_<env>_<tag>/`. The result JSON is at `Code/project_<env>_<tag>/<tag>_results.json`. Audit it."
+4. **Why SE was removed (for the dissertation defense, if asked):** Semantic Entropy requires loading an extra ~180M-parameter cross-encoder NLI model (`cross-encoder/nli-deberta-v3-base`) and running bidirectional NLI inference between every pair of K stochastically-sampled responses for every eval row. On a 7B-class generator this is on the order of 3-4 hours extra compute per model — incompatible with the 2-3 h per-session Colab/Kaggle budget. SE is still acknowledged as prior art in the literature survey chapter; only the eval-time baseline run is dropped.
 
-The assistant has a calibrated audit format from the 2026-05-28 Colab gpt2 smoke run — same format works for every model.
+**What to do next (priority unchanged):**
+
+1. Run `Code/eval_datasets/00_download_eval_datasets.ipynb` ONCE per Colab/Kaggle account to produce `eval_*.parquet` files (10 datasets).
+2. Run `01_data_generation.ipynb` for each of the 6 large models (1000/class, ~100 min each).
+3. Run `02_all_variants.ipynb` and `03_baselines_sota.ipynb` for each model — both pick up the local parquets automatically via `_find_local_parquet(...)`. Combined target ~2-2.5 h per model.
+4. Paste each model's `<tag>_baselines_results.json` and `<tag>_all_variants_results.json` back to the assistant for the cross-method comparison table at full scale.
