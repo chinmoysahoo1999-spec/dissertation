@@ -60,6 +60,22 @@ In priority order:
 | OPT-6.7B | Kaggle T4×2 | ~100 min | no |
 
 **Schema-sufficiency confirmed.** `<tag>_dataset_full.json` contains `{text, label, embedding, D_mean, V_last, H_mean, entity, title}` per record. This is sufficient input for ANY future baseline that takes (text, label) and re-runs the LLM to extract its own features. The 4 baselines in `03_baselines_sota.ipynb` (SAPLMA, HaloScope, EigenScore, HalluShift) all work this way; any future addition (Lookback Lens, Semantic Entropy, SelfCheckGPT, etc.) will work identically. **No need to re-run data-gen when adding new baselines.**
+
+### Shared eval-dataset downloader (2026-05-30 final)
+
+`Code/eval_datasets/00_download_eval_datasets.ipynb` — runs ONCE on any HF-authenticated session. Produces:
+- `eval_truthfulqa.parquet`, `eval_triviaqa.parquet`, `eval_coqa.parquet`, `eval_tydiqa.parquet`
+- `eval_halueval_qa.parquet`, `eval_halueval_summ.parquet`, `eval_halueval_dialog.parquet`
+- `eval_datasets.zip` (all 7 bundled)
+
+**Two workflows for distributing the parquet files to the per-model analysis sessions:**
+
+| Where | How to upload | Files appear at |
+|---|---|---|
+| Kaggle | New Dataset → upload `eval_datasets.zip` (slug `dissertation-eval-datasets`). Each notebook: Add Input → pick the dataset. | `/kaggle/input/dissertation-eval-datasets/eval_*.parquet` |
+| Colab | Upload zip to session, then `!unzip eval_datasets.zip` | Current working dir |
+
+The `_find_local_parquet(label)` function inside every `02` and `03` notebook checks 7 candidate paths automatically. If a parquet is found, prints `(LOCAL: <path>)` and skips the HF download. If not found, prints `(HF loader #N)` and falls back. **No code change required per model** — the same notebook works in both modes.
 2. **Run `project_colab_qwen25_05b/all_variants.ipynb`** on Colab T4 (~50–60 min at 500/class). This is the **headline ablation** since 0.5B is the smallest backbone expected to show real signal. The acceptance criterion is **E ≥ A + 0.02** (the original MIND+ story holds) AND ideally **K > E** (adding F1+F5+F7 on top of E gives more lift than E alone). If yes, the feature stack is real — scale up to bigger models. If no, rethink the feature stack before burning GPU budget.
 3. **Apply for Llama-2-7B HuggingFace gated access** at https://huggingface.co/meta-llama/Llama-2-7b-hf (approval typically < 1 hour). Required before `project_kaggle_llama2_7b/` can run.
 4. **(Conditional on step 2 passing)** Migrate the other 6 model notebooks to the unified `all_variants.ipynb` design. The builder script is `outputs/build_all_variants.py` (in the assistant's scratch directory) — extending it is a 2-line edit to the `MODELS` list.
