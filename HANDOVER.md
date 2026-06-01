@@ -1,6 +1,6 @@
 # HANDOVER.md — Next-session briefing
 
-_Written: 2026-05-28; updated 2026-06-01. Author: Cowork assistant. For: the next Cowork session._
+_Written: 2026-05-28; updated 2026-06-01 (LL removed). Author: Cowork assistant. For: the next Cowork session._
 
 This document is the first thing the next session should read. It is intentionally short and direct. The longer state lives in `STATUS.md` (snapshot) and `PLAN.md` (roadmap) — this file just gives the new session enough context to pick up the thread without re-reading both.
 
@@ -77,9 +77,9 @@ In priority order:
 
 The `_find_local_parquet(label)` function inside every `02` and `03` notebook checks 7 candidate paths automatically. If a parquet is found, prints `(LOCAL: <path>)` and skips the HF download. If not found, prints `(HF loader #N)` and falls back. **No code change required per model** — the same notebook works in both modes.
 
-### 5 SOTA baselines + 10 datasets locked in (Semantic Entropy removed 2026-06-01) (2026-05-30 final)
+### 4 SOTA baselines + 10 datasets locked in (SE removed AM 2026-06-01; LL removed PM 2026-06-01)
 
-`03_baselines_sota.ipynb` evaluates **5 baselines** on **10 datasets** + Wikipedia held-out:
+`03_baselines_sota.ipynb` evaluates **4 baselines** on **10 datasets** + Wikipedia held-out:
 
 | # | Baseline | Paradigm | Paper / Repo |
 |---|---|---|---|
@@ -87,18 +87,16 @@ The `_find_local_parquet(label)` function inside every `02` and `03` notebook ch
 | 2 | HaloScope | unsupervised, spectral + non-linear probe | Du et al. NeurIPS 2024 — [github.com/deeplearning-wisc/haloscope](https://github.com/deeplearning-wisc/haloscope) |
 | 3 | EigenScore (INSIDE) | sampling-based, geometric (K×K cov log-det) | Chen et al. ICLR 2024 — [github.com/D2I-ai/eigenscore](https://github.com/D2I-ai/eigenscore) |
 | 4 | HalluShift | supervised, Wasserstein + token-prob | Dasgupta IJCNN 2025 — [github.com/sharanya-dasgupta001/hallushift](https://github.com/sharanya-dasgupta001/hallushift) |
-| 5 | **Lookback Lens** | supervised, **attention-based** | Chuang et al. EMNLP 2024 — [github.com/voidism/Lookback-Lens](https://github.com/voidism/Lookback-Lens) |
 | ~~6~~ | ~~**Semantic Entropy**~~ — REMOVED 2026-06-01 (NLI loader + K-sample clustering added ~3-4 hr per 7B model; broke 2-3 h per-session budget) | sampling-based, NLI clustering | Farquhar et al. Nature 2024 |
 
 Datasets: TruthfulQA, TriviaQA, CoQA, TydiQA-GP, HaluEval-{QA, Summ, Dialog}, NQ-Open, HotpotQA distractor, PopQA. Plus Wikipedia held-out (in-distribution).
 
-**Why this exact set of 5 baselines (after Semantic Entropy removal on 2026-06-01):**
+**Why this exact set of 4 baselines (final, after Semantic Entropy + LookbackLens removal on 2026-06-01):**
 
 * SAPLMA — establishes a *floor*: simplest possible supervised probe. Anything fancier must beat raw hidden + MLP.
 * HaloScope — current best **unsupervised** detector. Critical for the "what if no labels?" thread.
 * EigenScore — current best **sampling-based** detector with geometric scoring. Different paradigm from hidden-state methods.
 * HalluShift — the *senior's* work. The dissertation must beat this on Llama-2-7B to claim contribution. Required.
-* Lookback Lens — adds the **attention paradigm**. Cheap, complements hidden-state and sampling baselines.
 * ~~Semantic Entropy — Nature 2024, most-cited 2024 hallucination paper.~~ **REMOVED 2026-06-01** for runtime reasons (cross-encoder NLI inference between every K-sample pair); SE is acknowledged in the dissertation as published prior art but not run as a baseline. Eval-time budget on 7B models reallocated to LookbackLens and the multi-task eval extension.
 
 ### Auto-download behavior (per notebook)
@@ -107,7 +105,7 @@ Datasets: TruthfulQA, TriviaQA, CoQA, TydiQA-GP, HaluEval-{QA, Summ, Dialog}, NQ
 |---|---|
 | `01_data_generation.ipynb` | `<tag>_dataset_full.json` |
 | `02_all_variants.ipynb` | `<tag>_all_variants_results.json` + 12 × `<tag>_variant_<A..L>_best.pth` |
-| `03_baselines_sota.ipynb` | `<tag>_baselines_results.json` + 4 × `.pth` (SAPLMA, HaloScope, HalluShift) + 1 × `.pkl` (Lookback Lens) |
+| `03_baselines_sota.ipynb` | `<tag>_baselines_results.json` + 3 × `.pth` (SAPLMA, HaloScope, HalluShift) |
 
 Excluded from auto-download (regeneratable, large): `<tag>_dataset_with_features.json` (~100 MB+), `<tag>_baseline_feature_cache.json` (~150 MB+ to ~1 GB).
 2. **Run `project_colab_qwen25_05b/all_variants.ipynb`** on Colab T4 (~50–60 min at 500/class). This is the **headline ablation** since 0.5B is the smallest backbone expected to show real signal. The acceptance criterion is **E ≥ A + 0.02** (the original MIND+ story holds) AND ideally **K > E** (adding F1+F5+F7 on top of E gives more lift than E alone). If yes, the feature stack is real — scale up to bigger models. If no, rethink the feature stack before burning GPU budget.
@@ -147,7 +145,7 @@ Excluded from auto-download (regeneratable, large): `<tag>_dataset_with_features
 
 1. **Semantic Entropy baseline REMOVED from all 6 large-model `03_baselines_sota.ipynb` + the source `Code/project_smoke_gpt2/baselines_sota.ipynb`.** Backup of pre-removal source: `Code/project_smoke_gpt2/baselines_sota.ipynb.bak_se_remove`. Removal script: `outputs/remove_semantic_entropy.py` (re-emits all 6 copies after patching the source).
 
-2. **The final baseline set is now 5:** SAPLMA · HaloScope · HalluShift · EigenScore (INSIDE) · LookbackLens.
+2. **The final baseline set was reduced to 5 (SE removed) and then to 4 (LookbackLens also removed later same day):** SAPLMA · HaloScope · HalluShift · EigenScore (INSIDE).
 
 3. **Eval-dataset pre-download (`Code/eval_datasets/00_download_eval_datasets.ipynb`) time savings — quantified:**
 
@@ -167,3 +165,22 @@ Excluded from auto-download (regeneratable, large): `<tag>_dataset_with_features
 2. Run `01_data_generation.ipynb` for each of the 6 large models (1000/class, ~100 min each).
 3. Run `02_all_variants.ipynb` and `03_baselines_sota.ipynb` for each model — both pick up the local parquets automatically via `_find_local_parquet(...)`. Combined target ~2-2.5 h per model.
 4. Paste each model's `<tag>_baselines_results.json` and `<tag>_all_variants_results.json` back to the assistant for the cross-method comparison table at full scale.
+
+---
+
+## g. 2026-06-01 PM session delta — LookbackLens dropped; FINAL 4-baseline set
+
+After completing the SE removal earlier today, on reflection LookbackLens was also dropped. The 4 retained baselines already cover every major paradigm (simple probe + unsupervised + sampling-based + multi-feature supervised including the senior's HalluShift) and HalluShift's 5 Wasserstein + 5 cosine attention features already cover the attention-paradigm angle that LL was supposed to add.
+
+**Final baseline set (frozen — no further additions planned):**
+
+| # | Baseline | Paradigm | Paper |
+|---|---|---|---|
+| 1 | SAPLMA | supervised, simple probe (the *floor*) | Azaria & Mitchell 2023 |
+| 2 | HaloScope | unsupervised, spectral + non-linear probe | Du et al. NeurIPS 2024 |
+| 3 | HalluShift | supervised, multi-feature (Wasserstein + token-prob) | Dasgupta IJCNN 2025 — the senior's work |
+| 4 | EigenScore (INSIDE) | sampling-based, geometric covariance score | Chen et al. ICLR 2024 |
+
+**Removal script + backup**: `outputs/remove_lookback_lens.py`, `Code/project_smoke_gpt2/baselines_sota.ipynb.bak_ll_remove`.
+
+**Defensive line if asked during the defense**: "We considered Lookback Lens; given that HalluShift already exploits attention statistics via its 5 Wasserstein + 5 cosine attention features across hidden states and attention matrices, adding LL provided no additional paradigm coverage. We omitted it to keep the cross-method comparison tractable on free-tier hardware."
