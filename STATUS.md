@@ -1,5 +1,18 @@
 # STATUS.md — Project Snapshot
 
+_**2026-06-04 — MAJOR UPDATE (see HANDOVER.md for the full briefing).**_
+_The fleet moved from 12 variants / 4 baselines to **16 variants (A–P)** and **6 baselines** per model._
+_• New variants **M/N/O/P** use features **F11–F16** (URP, LTC, CTS, EAR, PEA, HID) on top of the canonical embedding + MIND+ + F1–F10._
+_• New baselines: **MIND** (Su 2024, last-layer-hidden probe — the method this work extends) and **Perplexity** (unsupervised mean-token-NLL, rank-normalised) → SAPLMA · HaloScope · HalluShift · EigenScore · MIND · Perplexity._
+_• Both `02` and `03` evaluate the **same 10 datasets** at `QUICK_EVAL_N = 350` **deterministic first-N rows** (variants and baselines score identical rows), and each writes a **feature-dimension + justification table** to its output JSON (`feature_spec` / `baseline_feature_spec`)._
+_• **Robustness hardening** fleet-wide: NaN-safe `_nan_fill` (all-NaN columns → 0), NaN-safe metrics (NaN prob → 0.5), HalluShift 31-d `nan_to_num` — fixes the GPT-J `F5_logit_lens_jsd` all-NaN crash._
+_• **opt_67b unified** into one 16-variant `02` (old `02_..._new_...` now redundant)._
+_• **Running:** 7B models (falcon, mistral, llama2, opt) need Kaggle **T4×2** (single T4 OOMs; **P100 incompatible** — CUDA sm_60). Block-0 cell loads `dataset_full` + eval parquets from `/kaggle/input`._
+_• **Llama-2** is gated (needs `HF_TOKEN` via Kaggle Secrets, not hardcoded) and currently has only **400 records (200/class)** vs 2000 for the others → regenerate at 1000/class._
+_• Edits are in the working tree; **commit pending**. Recovery point if notebooks vanish: `git checkout af1c901 -- <paths>`._
+
+---
+
 _Last updated: 2026-06-01 — **Semantic Entropy baseline REMOVED** from all 6 large-model `03_baselines_sota.ipynb` + the source gpt2 notebook. Reason: cross-encoder NLI + K-sample bidirectional clustering added ~3-4 hr per 7B model. Final baseline set is now **4 SOTA methods**: SAPLMA, HaloScope, HalluShift, EigenScore (INSIDE). (LookbackLens was also dropped on 2026-06-01 — same paradigm coverage already provided by HalluShift's attention features.) The pre-downloaded eval-dataset workflow (`Code/eval_datasets/00_download_eval_datasets.ipynb`) saves an estimated **~111 min cumulative (single account) / ~60 min in 6-account parallel mode** versus repeating HF Hub resolution in every 02 + 03 run._
 
 _Previously (2026-05-29): pivot to **one unified `all_variants.ipynb` per model**: data-gen + F1–F10 feature extraction + 12 MLP variants in one resume-safe notebook._

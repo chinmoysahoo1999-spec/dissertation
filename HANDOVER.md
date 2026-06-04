@@ -1,186 +1,91 @@
 # HANDOVER.md — Next-session briefing
 
-_Written: 2026-05-28; updated 2026-06-01 (LL removed). Author: Cowork assistant. For: the next Cowork session._
+_Written 2026-05-28; **major refresh 2026-06-04** (16-variant + 6-baseline fleet, feature-dimension tables, NaN-robustness, opt unified). Author: Cowork assistant. For: the next session._
 
-This document is the first thing the next session should read. It is intentionally short and direct. The longer state lives in `STATUS.md` (snapshot) and `PLAN.md` (roadmap) — this file just gives the new session enough context to pick up the thread without re-reading both.
-
----
-
-## a. Goal (the big picture)
-
-**Dissertation title:** *Hallucination Detection in Large Language Models Using Internal Representations.*
-
-**Concrete plan:** extend the MIND framework (Su et al., Findings of ACL 2024) by augmenting the canonical last-token / last-layer hidden state with three categories of additional signals derived from the same forward pass:
-
-1. **Layer-wise representation drift** — `D_mean` = mean cosine distance between adjacent layers at the last token.
-2. **Cross-layer variance** — `V_last` = L2 variance of last-token activations across layers.
-3. **Predictive entropy** — `H_mean` = mean per-step Shannon entropy of the token distribution during generation.
-
-Evaluate across **4 LLMs** (TinyLlama-1.1B, Qwen2.5-3B, GPT-J-6B, Llama-2-7B) and **7 hallucination-detection benchmarks** (TruthfulQA, TriviaQA, CoQA, TydiQA-GP, HaluEval-{QA, Summ, Dialog}). The 7B/6B models are tractable on Kaggle Free T4×2 (32 GB total VRAM in bf16) without int8 quantisation.
-
-**Originality discipline (locked):** strict separation from Sharanya Dasgupta's HalluShift work — no Wasserstein, no mtp/Mps/Mg, no automated feature selection. See STATUS.md §4.
+Read this first. Longer detail lives in `STATUS.md` (snapshot) and `PLAN.md` (roadmap).
 
 ---
 
-## b. Current status
+## a. Goal
 
-### What's already done
+**Dissertation:** _Hallucination Detection in Large Language Models Using Internal Representations._ Extend the MIND framework (Su et al., Findings of ACL 2024) — the canonical last-token / last-layer hidden state — with additional internal-representation signals from the same forward pass. Evaluate a **16-variant ablation (A–P)** against **6 SOTA baselines** across several LLMs and **10 hallucination-detection datasets**.
 
-* **Literature survey chapter (11 pages)** — committed; PDF + Markdown source at `Literature_Survey_Chapter.pdf` and `Code/survey_chapter.md`.
-* **Pipeline implementation** — the full 14-block notebook pipeline (MIND data-gen → feature extraction → MLP train → Wikipedia held-out → 7-dataset multi-task eval → JSON dump) is working end-to-end. Confirmed by the gpt2 Colab smoke run on 2026-05-28 (147 sec, all datasets loaded, all metrics produced).
-* **Per-model notebook fleet (8 notebooks)** — each lives in its own `Code/project_<env>_<tag>/` directory; see "Important context" below.
-* **HF dataset namespace bug fixed** in the new fleet (`truthful_qa → truthfulqa/truthful_qa`; `trivia_qa → mandarjoshi/trivia_qa`; `tydiqa → google-research-datasets/tydiqa`). Each notebook uses `safe_load_first(...)` to try the namespaced ID first and fall back to the legacy bare ID.
-* **Full-dataset save (BLOCK 6.5)** added to every notebook — each run persists `<tag>_dataset_full.json` (every generated record, pre-split) alongside the existing train/test JSONs, so ablations can be run offline without re-generating data on a GPU.
+Originality discipline (locked): strict separation from the senior's HalluShift work — HalluShift is included only as a baseline.
 
-### What's in progress / partially done
+---
 
-* **Falcon-7B Kaggle run (2026-05-28)** — the legacy `Code/project_falcon_7b.ipynb` was run with 200 H + 200 ¬H samples; 3 of 7 downstream datasets failed (namespace bug, now fixed in the new fleet). Multi-task F1 = 0.0 across the board (expected at this sample size — MLP collapses to constant predictor). Re-run the **new** `Code/project_kaggle_falcon_7b/` notebook at 1000/class to get a meaningful number.
-* **gpt2 Colab smoke run (2026-05-28)** — completed cleanly, but predictions collapsed to "always class 1" with 80 training samples on a 124M backbone. Smoke purpose was pipeline verification, not a meaningful AUROC. **Don't waste time interpreting gpt2 metrics — they are diagnostic, not scientific.**
-* **(2026-05-29) unified `all_variants.ipynb` ran on gpt2 (500/class).** Pipeline verified; SDPA attention bug fixed; all 9 F-features extracted with 0 failures. But results are noise-level: Wikipedia AUROC 0.32–0.51, multi-task avg AUROC 0.40–0.49, no consistent variant winner. gpt2 too small to produce meaningful detector. Re-cap: pipeline is correct, signal needs bigger backbone.
-* **(2026-05-29) `baselines_sota.ipynb` shipped for gpt2** — 4 SOTA baselines (SAPLMA, HaloScope, EigenScore/INSIDE, HalluShift) faithfully ported from their official GitHub repos. Reuses `gpt2_smoke_dataset_full.json` so AUROCs are directly comparable to the 12 variants. NOT YET RUN — that's the next student action.
-* **(2026-05-29) `project_colab_qwen25_05b/all_variants.ipynb` NOT yet run** — should be the headline ablation since the 0.5B backbone is the smallest one expected to show real signal.
+## b. Current status (2026-06-04)
 
-### What still needs to happen
+### Experiment shape (LOCKED)
+Each model has two runnable notebooks. Both evaluate the **same 10 datasets** at a fixed `QUICK_EVAL_N = 350` **deterministic first-N rows / dataset** (so `02` and `03` score the *same* rows → directly comparable; HaluEval scores 2 rows/sample).
 
-In priority order:
+**`02_all_variants_<model>.ipynb` — 16 variants (A–P)**
+- **A–L (original 12):** canonical embedding (MIND backbone) + MIND+ scalars (`D_mean`, `V_last`, `H_mean`) + F1–F10 ablations.
+- **M/N/O/P (4 new)** built on new features **F11–F16**: F11 URP (8-d unembedding-reasoning projection), F12 LTC (layer-trajectory curvature), F13 CTS (confidence-trajectory slope+variance), F14 EAR (effective attention rank), F15 PEA (prompt-echo alignment), F16 HID (head-importance divergence).
+  - M = embedding+URP+LTC · N = embedding+CTS+EAR+PEA · O = embedding+URP+LTC+CTS · P = embedding+MIND+(D,V,H)+all-new.
 
-1. **Run `project_smoke_gpt2/baselines_sota.ipynb`** on Colab — this is the cross-method comparison. Will produce `gpt2_smoke_baselines_results.json`. Compare against `gpt2_smoke_all_variants_results.json` to see if any of our 12 variants beats HalluShift / HaloScope / SAPLMA / EigenScore on the same backbone. **Expected runtime: ~60–90 min** (the dataset/feature cache reuses Stage 2 from all_variants so no data-gen; HaloScope sweep + EigenScore K=10 wiki eval dominate the cost).
-1b. **(NEW 2026-05-30) `project_colab_qwen25_3b/` is the headline large-model run on Colab.** Both `all_variants.ipynb` (300/class, ~50 min) and `baselines_sota.ipynb` (~70 min) deployed. Combined ~2h on Colab T4 — fits a single session. Paste both result JSONs back when done; assistant will repeat the comparison table at Qwen-3B scale (the gpt2 results were too noisy — Qwen-3B should give real signal).
-1c. **(NEW 2026-05-30) `project_kaggle_llama2_7b/` is the gated large-model run on Kaggle T4×2.** Both notebooks deployed (200/class, combined ~2.5h). Requires HF gated-access approval at https://huggingface.co/meta-llama/Llama-2-7b-hf and pasting an HF token in BLOCK 0 of each notebook.
+**`03_baselines_sota_<model>.ipynb` — 6 baselines**
+SAPLMA · HaloScope · HalluShift · EigenScore (the 4 SOTA) **+ MIND** (Su 2024 — supervised probe on the last-layer hidden; the method this work extends) **+ Perplexity** (unsupervised mean-token-NLL, rank-normalised).
 
-1d. **(NEW 2026-05-30 final) Data-generation phase LOCKED IN for 6-model fleet.** Sample size bumped to 1000/class across all large models. Two new models added: Mistral-7B-v0.1 and OPT-6.7B. All split into 3-notebook layout. **Next student action: run `01_data_generation.ipynb` for each of the 6 large models, one at a time on Kaggle (or in parallel across Kaggle accounts).** Per-model runtime ~100 min. Total GPU time ~10h across all 6 models, well within Kaggle 30h/week budget. After 01 produces `<tag>_dataset_full.json`, the analysis notebooks 02 and 03 can run in parallel on two more accounts.
+Both notebooks write a **feature-dimension + justification table** to the output JSON: `feature_spec` / `feature_spec_table_md` (02), `baseline_feature_spec` / `baseline_feature_spec_table_md` (03).
 
-| Model | Where | 01 runtime | Gated? |
-|---|---|---|---|
-| Qwen-3B | Colab T4 | ~50 min (already ran with old config) | no |
-| Llama-2-7B | Kaggle T4×2 | ~100 min | YES (license + token) |
-| Falcon-7B | Kaggle T4×2 | ~100 min | no |
-| GPT-J-6B | Kaggle T4×2 | ~100 min | no |
-| Mistral-7B-v0.1 | Kaggle T4×2 | ~100 min | no |
-| OPT-6.7B | Kaggle T4×2 | ~100 min | no |
+### Per-model state
+| Model | folder | records | 02 / 03 | run on |
+|---|---|---|---|---|
+| OPT-6.7B | `project_kaggle_opt_67b` | 2000 | 16 / 6 ✓ (also has redundant `02_..._new_...`) | Kaggle T4×2 |
+| GPT-J-6B | `project_kaggle_gptj_6b` | 2000 | 16 / 6 ✓ (ran; `_nan_fill` fix applied) | Kaggle T4×2 (borderline single) |
+| Mistral-7B | `project_kaggle_mistral_7b` | 2000 | 16 / 6 ✓ | Kaggle T4×2 |
+| Falcon-7B | `project_kaggle_falcon_7b` | 2000 | 16 / 6 ✓ (extraction done) | Kaggle T4×2 |
+| Llama-2-7B | `project_kaggle_llama2_7b` | **400 ⚠** | 16 / 6 ✓ but **BLOCKED (gated)** | Kaggle T4×2 |
+| Qwen2.5-3B | `project_colab_qwen25_3b` | 2000 | 16 / 6 ✓ | Colab T4 |
+| Qwen2.5-0.5B | `project_colab_qwen25_05b` | 600 | 16 ✓ (no 03 — never had one) | Colab T4 |
+| gpt2 (smoke) | `project_smoke_gpt2` | 1000 | 16 / 6 ✓ (diagnostic only) | any |
+| TinyLlama-1.1B | `project_colab_tinyllama_11b` | none | not built | Colab T4 |
 
-**Schema-sufficiency confirmed.** `<tag>_dataset_full.json` contains `{text, label, embedding, D_mean, V_last, H_mean, entity, title}` per record. This is sufficient input for ANY future baseline that takes (text, label) and re-runs the LLM to extract its own features. The 4 baselines in `03_baselines_sota.ipynb` (SAPLMA, HaloScope, EigenScore, HalluShift) all work this way; any future addition (Lookback Lens, Semantic Entropy, SelfCheckGPT, etc.) will work identically. **No need to re-run data-gen when adding new baselines.**
+### Robustness fixes (applied to all `02` + `03`, 2026-06-04)
+- **`_nan_fill` (02):** all-NaN feature columns → 0.0 (no crash; numpy warning suppressed). _GPT-J's `F5_logit_lens_jsd` comes out all-NaN — this neutralises it so the run completes; that one feature then contributes nothing._
+- **NaN-safe metrics (02 + 03):** NaN probabilities → 0.5 before `brier`/`AUROC`.
+- **HalluShift 31-d features (03):** `nan_to_num` before scaling so one all-NaN sub-feature can't poison the scaler.
 
-### Shared eval-dataset downloader (2026-05-30 final)
-
-`Code/eval_datasets/00_download_eval_datasets.ipynb` — runs ONCE on any HF-authenticated session. Produces:
-- `eval_truthfulqa.parquet`, `eval_triviaqa.parquet`, `eval_coqa.parquet`, `eval_tydiqa.parquet`
-- `eval_halueval_qa.parquet`, `eval_halueval_summ.parquet`, `eval_halueval_dialog.parquet`
-- `eval_datasets.zip` (all 7 bundled)
-
-**Two workflows for distributing the parquet files to the per-model analysis sessions:**
-
-| Where | How to upload | Files appear at |
-|---|---|---|
-| Kaggle | New Dataset → upload `eval_datasets.zip` (slug `dissertation-eval-datasets`). Each notebook: Add Input → pick the dataset. | `/kaggle/input/dissertation-eval-datasets/eval_*.parquet` |
-| Colab | Upload zip to session, then `!unzip eval_datasets.zip` | Current working dir |
-
-The `_find_local_parquet(label)` function inside every `02` and `03` notebook checks 7 candidate paths automatically. If a parquet is found, prints `(LOCAL: <path>)` and skips the HF download. If not found, prints `(HF loader #N)` and falls back. **No code change required per model** — the same notebook works in both modes.
-
-### 4 SOTA baselines + 10 datasets locked in (SE removed AM 2026-06-01; LL removed PM 2026-06-01)
-
-`03_baselines_sota.ipynb` evaluates **4 baselines** on **10 datasets** + Wikipedia held-out:
-
-| # | Baseline | Paradigm | Paper / Repo |
-|---|---|---|---|
-| 1 | SAPLMA | supervised, single-layer probe | Azaria & Mitchell 2023 |
-| 2 | HaloScope | unsupervised, spectral + non-linear probe | Du et al. NeurIPS 2024 — [github.com/deeplearning-wisc/haloscope](https://github.com/deeplearning-wisc/haloscope) |
-| 3 | EigenScore (INSIDE) | sampling-based, geometric (K×K cov log-det) | Chen et al. ICLR 2024 — [github.com/D2I-ai/eigenscore](https://github.com/D2I-ai/eigenscore) |
-| 4 | HalluShift | supervised, Wasserstein + token-prob | Dasgupta IJCNN 2025 — [github.com/sharanya-dasgupta001/hallushift](https://github.com/sharanya-dasgupta001/hallushift) |
-| ~~6~~ | ~~**Semantic Entropy**~~ — REMOVED 2026-06-01 (NLI loader + K-sample clustering added ~3-4 hr per 7B model; broke 2-3 h per-session budget) | sampling-based, NLI clustering | Farquhar et al. Nature 2024 |
-
-Datasets: TruthfulQA, TriviaQA, CoQA, TydiQA-GP, HaluEval-{QA, Summ, Dialog}, NQ-Open, HotpotQA distractor, PopQA. Plus Wikipedia held-out (in-distribution).
-
-**Why this exact set of 4 baselines (final, after Semantic Entropy + LookbackLens removal on 2026-06-01):**
-
-* SAPLMA — establishes a *floor*: simplest possible supervised probe. Anything fancier must beat raw hidden + MLP.
-* HaloScope — current best **unsupervised** detector. Critical for the "what if no labels?" thread.
-* EigenScore — current best **sampling-based** detector with geometric scoring. Different paradigm from hidden-state methods.
-* HalluShift — the *senior's* work. The dissertation must beat this on Llama-2-7B to claim contribution. Required.
-* ~~Semantic Entropy — Nature 2024, most-cited 2024 hallucination paper.~~ **REMOVED 2026-06-01** for runtime reasons (cross-encoder NLI inference between every K-sample pair); SE is acknowledged in the dissertation as published prior art but not run as a baseline. Eval-time budget on 7B models reallocated to LookbackLens and the multi-task eval extension.
-
-### Auto-download behavior (per notebook)
-
-| Notebook | Downloads |
-|---|---|
-| `01_data_generation.ipynb` | `<tag>_dataset_full.json` |
-| `02_all_variants.ipynb` | `<tag>_all_variants_results.json` + 12 × `<tag>_variant_<A..L>_best.pth` |
-| `03_baselines_sota.ipynb` | `<tag>_baselines_results.json` + 3 × `.pth` (SAPLMA, HaloScope, HalluShift) |
-
-Excluded from auto-download (regeneratable, large): `<tag>_dataset_with_features.json` (~100 MB+), `<tag>_baseline_feature_cache.json` (~150 MB+ to ~1 GB).
-2. **Run `project_colab_qwen25_05b/all_variants.ipynb`** on Colab T4 (~50–60 min at 500/class). This is the **headline ablation** since 0.5B is the smallest backbone expected to show real signal. The acceptance criterion is **E ≥ A + 0.02** (the original MIND+ story holds) AND ideally **K > E** (adding F1+F5+F7 on top of E gives more lift than E alone). If yes, the feature stack is real — scale up to bigger models. If no, rethink the feature stack before burning GPU budget.
-3. **Apply for Llama-2-7B HuggingFace gated access** at https://huggingface.co/meta-llama/Llama-2-7b-hf (approval typically < 1 hour). Required before `project_kaggle_llama2_7b/` can run.
-4. **(Conditional on step 2 passing)** Migrate the other 6 model notebooks to the unified `all_variants.ipynb` design. The builder script is `outputs/build_all_variants.py` (in the assistant's scratch directory) — extending it is a 2-line edit to the `MODELS` list.
-5. **Otherwise (step 2 fails)** Reopen the feature design before committing GPU budget. The assistant has a ranked menu of 10 candidate features; the F-stack can be re-ordered or replaced.
-6. **Patch STATUS.md §3** to fix the three mis-glossed HalluShift feature definitions (mtp / Mps / Mg — see STATUS.md Issue #10). Required before the lit-review chapter goes out, regardless of step 2 outcome.
-7. **Run the 4 Colab notebooks** (existing per-model fleet, not unified) once the ablation question is answered:
-   * `project_colab_tinyllama_11b/` (500/class, ~15 min).
-   * `project_colab_qwen25_3b/` (500/class, ~20 min) — this matches the mid-eval baseline target (AUROC 0.673 expected).
-   * `project_colab_opt_27b/` (500/class, ~15 min).
-3. **Run the 3 Kaggle notebooks** (1000/class each, in priority order):
-   * `project_kaggle_falcon_7b/` first (re-do of today's run, no gating).
-   * `project_kaggle_gptj_6b/` second (no gating; cross-architecture story).
-   * `project_kaggle_llama2_7b/` third (after gated access lands).
-4. After each run, drop the `<tag>_results.json` (and ideally `<tag>_dataset_full.json` if it'll fit in Git) into the matching `Code/project_<tag>/` directory. The assistant can then examine the JSON for sanity — same audit format as the 2026-05-28 gpt2 smoke result.
-5. Once all 4 mid-eval models have results, write the methods + results chapters (PLAN.md §Session 14).
+### Results so far
+- **OPT-6.7B** (earlier, 500-cap split notebooks): variant **N best** (avg AUROC ≈ 0.551), ahead of SAPLMA (0.514) and HalluShift (0.486) on average. Comparison table at `Code/project_kaggle_opt_67b/opt_67b_variants_vs_baselines.{tex,html}`.
+- GPT-J `02` ran end-to-end after the `_nan_fill` fix; Falcon feature-extraction completed; Llama-2 blocked on gated access.
 
 ---
 
 ## c. Important context
 
-### File locations (Windows paths)
+### Files / repo
+- Repo root `E:\Dessertation`; GitHub `chinmoysahoo1999-spec/dissertation`, branch `main`.
+- Per-model dirs `Code/project_<env>_<tag>/` with `01_data_generation`, `02_all_variants`, `03_baselines_sota`. **gpt2** uses `all_variants.ipynb` / `baselines_sota.ipynb`; **qwen25_05b** has `all_variants.ipynb` only (no 03).
+- **Patcher scripts** (assistant scratch — reuse if re-applying): `patch_02_add_new_variants.py`, `patch_03_add_baselines.py`, `fix_headers.py`, `fix_correctness.py`, `do_opt.py`.
+- **Git recovery point: commit `af1c901`** holds the full patched fleet. A later "cleanup" commit (`7704b22`) deleted the 02/03 notebooks; they were restored (`f758ffe`). If notebooks go missing again: `git checkout af1c901 -- <paths>`.
+- **VS Code gotcha:** its Git integration keeps recreating `.git/index.lock`, which blocks every git command. Close VS Code before git ops; if needed `Remove-Item -Force .git\index.lock`.
 
-| What | Where |
-|---|---|
-| Repo root | `E:\Dessertation\` |
-| GitHub remote | `https://github.com/chinmoysahoo1999-spec/dissertation.git`, branch `main` |
-| Plan + Status + Handover | `E:\Dessertation\PLAN.md`, `E:\Dessertation\STATUS.md`, `E:\Dessertation\HANDOVER.md` (this file) |
-| Literature survey PDF | `E:\Dessertation\Literature_Survey_Chapter.pdf` |
-| Per-model run directories | `E:\Dessertation\Code\project_<env>_<tag
----
+### Hardware / running (Kaggle)
+- **7B models (falcon, mistral, llama2, opt) REQUIRE Kaggle "GPU T4 × 2"** — a single T4 OOMs (7B in bf16 ≈ 14 GB fills one 14.56 GB T4, no room for activations/generation). **Do NOT select P100** — its CUDA sm_60 is incompatible with the installed PyTorch (needs sm_70+).
+- GPT-J-6B is borderline on a single T4 (≈12 GB). Small models (Qwen2.5-3B/0.5B, TinyLlama) run fine on a single T4 / Colab.
+- **Block-0 setup cell** (prepend to 02/03 on Kaggle) copies `<tag>_dataset_full.json` + `eval_*.parquet` from `/kaggle/input` into the working dir, so the notebooks' loaders find them (no HF download for eval data).
+- **Llama-2 is gated:** requires HF access approved at `huggingface.co/meta-llama/Llama-2-7b-hf` **and** an `HF_TOKEN` set via Kaggle **Add-ons → Secrets** (never hardcode — repo is public on GitHub). The token pasted into chat earlier must be **revoked**.
 
-## f. 2026-06-01 session delta — Semantic Entropy removed + eval-dataset time savings
-
-**What changed since the last HANDOVER:**
-
-1. **Semantic Entropy baseline REMOVED from all 6 large-model `03_baselines_sota.ipynb` + the source `Code/project_smoke_gpt2/baselines_sota.ipynb`.** Backup of pre-removal source: `Code/project_smoke_gpt2/baselines_sota.ipynb.bak_se_remove`. Removal script: `outputs/remove_semantic_entropy.py` (re-emits all 6 copies after patching the source).
-
-2. **The final baseline set was reduced to 5 (SE removed) and then to 4 (LookbackLens also removed later same day):** SAPLMA · HaloScope · HalluShift · EigenScore (INSIDE).
-
-3. **Eval-dataset pre-download (`Code/eval_datasets/00_download_eval_datasets.ipynb`) time savings — quantified:**
-
-   | Scenario | Without pre-download | With pre-download | Saved |
-   |---|---|---|---|
-   | Per model (02 + 03 each, 10 datasets) | 20.5 min HF resolve | 0.2 min parquet load | **~20 min / model** |
-   | All 6 models, single account | ~123 min | ~12 min (one 00 download + 12 parquet loads) | **~111 min ≈ 1.9 h** |
-   | All 6 models, 6 parallel accounts | ~123 min | ~63 min (6 × 00 downloads + 12 parquet loads) | **~60 min ≈ 1.0 h** |
-
-   Plus qualitative wins: no HF rate-limit failures under parallel runs, no dataset-namespace breakage (e.g. `truthful_qa → truthfulqa/truthful_qa`), no mid-load kernel disconnects.
-
-4. **Why SE was removed (for the dissertation defense, if asked):** Semantic Entropy requires loading an extra ~180M-parameter cross-encoder NLI model (`cross-encoder/nli-deberta-v3-base`) and running bidirectional NLI inference between every pair of K stochastically-sampled responses for every eval row. On a 7B-class generator this is on the order of 3-4 hours extra compute per model — incompatible with the 2-3 h per-session Colab/Kaggle budget. SE is still acknowledged as prior art in the literature survey chapter; only the eval-time baseline run is dropped.
-
-**What to do next (priority unchanged):**
-
-1. Run `Code/eval_datasets/00_download_eval_datasets.ipynb` ONCE per Colab/Kaggle account to produce `eval_*.parquet` files (10 datasets).
-2. Run `01_data_generation.ipynb` for each of the 6 large models (1000/class, ~100 min each).
-3. Run `02_all_variants.ipynb` and `03_baselines_sota.ipynb` for each model — both pick up the local parquets automatically via `_find_local_parquet(...)`. Combined target ~2-2.5 h per model.
-4. Paste each model's `<tag>_baselines_results.json` and `<tag>_all_variants_results.json` back to the assistant for the cross-method comparison table at full scale.
+### Data status
+gptj / mistral / opt / qwen25_3b / falcon = **2000** records (1000/class) · gpt2 = 1000 · qwen25_05b = 600 · **llama2 = 400 (200/class — undersized; regenerate at 1000/class)** · tinyllama = none.
 
 ---
 
-## g. 2026-06-01 PM session delta — LookbackLens dropped; FINAL 4-baseline set
+## d. Decisions already made
+- 16 variants (A–P) + 6 baselines (added **MIND** + **Perplexity** as the cheap, paradigm-complementary additions); 10-dataset eval; `QUICK_EVAL_N = 350` deterministic first-N so variants and baselines score identical rows.
+- Feature-dimension + justification tables emitted in both output JSONs.
+- **opt_67b unified** into a single 16-variant `02_all_variants_opt_67b.ipynb` (its old M–P-only `02_all_variants_new_opt_67b.ipynb` is now redundant; safe to delete).
+- Fleet-wide NaN robustness.
+- HF token via Kaggle Secrets, never committed.
 
-After completing the SE removal earlier today, on reflection LookbackLens was also dropped. The 4 retained baselines already cover every major paradigm (simple probe + unsupervised + sampling-based + multi-feature supervised including the senior's HalluShift) and HalluShift's 5 Wasserstein + 5 cosine attention features already cover the attention-paradigm angle that LL was supposed to add.
+---
 
-**Final baseline set (frozen — no further additions planned):**
-
-| # | Baseline | Paradigm | Paper |
-|---|---|---|---|
-| 1 | SAPLMA | supervised, simple probe (the *floor*) | Azaria & Mitchell 2023 |
-| 2 | HaloScope | unsupervised, spectral + non-linear probe | Du et al. NeurIPS 2024 |
-| 3 | HalluShift | supervised, multi-feature (Wasserstein + token-prob) | Dasgupta IJCNN 2025 — the senior's work |
-| 4 | EigenScore (INSIDE) | sampling-based, geometric covariance score | Chen et al. ICLR 2024 |
-
-**Removal script + backup**: `outputs/remove_lookback_lens.py`, `Code/project_smoke_gpt2/baselines_sota.ipynb.bak_ll_remove`.
-
-**Defensive line if asked during the defense**: "We considered Lookback Lens; given that HalluShift already exploits attention statistics via its 5 Wasserstein + 5 cosine attention features across hidden states and attention matrices, adding LL provided no additional paradigm coverage. We omitted it to keep the cross-method comparison tractable on free-tier hardware."
+## e. What to do next (priority order)
+1. **Commit the working-tree changes** (16-var/6-base/headers/correctness across all models) — currently uncommitted. Close VS Code → `Remove-Item -Force .git\index.lock` → `git add -u Code/` → commit → `git push origin main` (use a HF/GitHub PAT for auth).
+2. **Llama-2:** approve HF gated access, set `HF_TOKEN` Kaggle secret, **regenerate data at 1000/class** (currently 400), then run 02+03 on **T4×2**.
+3. **Run the fleet on T4×2** — one model per Kaggle session (02 and 03 can be separate sessions). Paste each `<tag>_all_variants_results.json` + `<tag>_baselines_results.json` back to the assistant.
+4. **Build per-model variant-vs-baseline comparison tables** (like the OPT `.tex`/`.html`), then the cross-model summary.
+5. (optional) Build TinyLlama 02+03 once its data exists; delete the redundant OPT `..._new_...` notebook.
+6. While running, watch `n_eval_failures_per_dataset` — heavy OOM on a 7B during eval generation means the session isn't actually on T4×2.

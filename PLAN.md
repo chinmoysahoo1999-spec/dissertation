@@ -1,5 +1,10 @@
 # PLAN.md — Session-wise Roadmap (Kaggle-optimised)
 
+_**2026-06-04 update (current scope — see HANDOVER.md):** Experiment finalised at **16 variants (A–P)** + **6 baselines** (added **MIND** + **Perplexity**) per model; **10-dataset** eval capped at `QUICK_EVAL_N = 350` deterministic first-N (02 & 03 score identical rows); **feature-dimension tables** written to both output JSONs; **NaN-robustness** fixes fleet-wide; **opt_67b unified** into one 16-variant 02._
+_**Next actions:** (1) commit the working tree; (2) Llama-2 — approve HF gated access + set `HF_TOKEN` Kaggle secret + regenerate data at 1000/class (currently 400); (3) run 02+03 per model on **Kaggle T4×2** (P100 is incompatible; single T4 OOMs on 7B); (4) collect `<tag>_*_results.json` and build variant-vs-baseline comparison tables (OPT one already done). Data ready: gptj/mistral/opt/qwen3b/falcon = 2000, gpt2 = 1000, qwen05b = 600, llama2 = 400, tinyllama = none._
+
+---
+
 _Written: 2026-05-23. Based on the Feb 2026 mid-evaluation baseline._
 _Updated: 2026-05-23 (afternoon) — 7B / 6B models reinstated; targeting better headline AUROC._
 _Updated: 2026-05-28 — Falcon-7B added to the per-model fleet (first Kaggle run done); Colab-T4 smoke test introduced in `Code/smoke_test_colab/`; HF dataset namespace fix logged as STATUS Issue #8._
