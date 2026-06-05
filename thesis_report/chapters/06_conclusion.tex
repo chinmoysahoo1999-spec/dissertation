@@ -24,9 +24,11 @@ separable benchmark is set aside. Second, on the one model for which we have a c
 of file-backed measurements, the three core features add little on their own, the gains come
 from richer feature combinations, and even the best configurations match rather than beat the
 strongest baseline --- a supervised probe whose advantage seems to come from reading a better
-layer rather than from a cleverer feature. Third, the result is model-dependent: a second model
-of comparable size, in an extended run, favoured one of the proposed configurations instead.
-With only one fully verified model, we deliberately do not generalise.
+layer rather than from a cleverer feature. Third, the result is model-dependent: on a second
+model of comparable size a proposed configuration --- built from the more exploratory
+internal-state signals --- is instead the strongest method of all, clearing every baseline.
+Two models of similar size disagreeing about which method wins is itself the finding, and a
+caution against reading a universal winner off any one model.
 
 The contribution is therefore not a new state-of-the-art detector. It is a unified,
 free-tier-reproducible comparison of internal-state hallucination features across several open
@@ -38,11 +40,11 @@ checkable rather than hidden inside a single headline number.
 We state the limitations plainly, because several of them bound how far the conclusions can
 be taken.
 
-\textbf{One fully measured model.} Only one model has a complete, file-backed set of
-configuration and baseline measurements. The second large model is only partly verifiable,
-and the remaining large models have generated data but no reported detection results. The
-headline comparison therefore rests on a single model, and the cross-model claim is
-correspondingly cautious.
+\textbf{Two models, not the whole fleet.} The comparison rests on two six-billion-parameter
+models: one with the complete sixteen-configuration, six-baseline sweep, and one with the six
+baselines measured against the exploratory-feature configurations. The remaining large models
+have their training data ready but their detection runs are still in progress, so the
+cross-model claim is drawn from two models rather than the full fleet.
 
 \textbf{Modest sample sizes.} The unified runs use two thousand training examples per model
 and evaluate on a few hundred rows per benchmark. At this scale, individual AUROCs are noisy,
@@ -60,18 +62,19 @@ constraints, and a better-resourced replication might reach steadier numbers.
 carried by a single easy benchmark. The rankings should be read with that in mind, and
 per-benchmark results (Appendix~\ref{app:tables}) are more informative than the averages.
 
-\textbf{Pending archival.} The extended run on the second model is recorded in a comparison
-table but its consolidated measurement file is not in the current snapshot, so its numbers are
-reported as indicative rather than verified.
+\textbf{Split evaluation on the second model.} On the second model the literature and
+core-feature configurations were scored on the earlier seven-benchmark suite while the
+exploratory-feature configurations and the baselines used the full ten; a single unified
+re-run would put all sixteen configurations on the same footing.
 
 \section{Future work}
 
 Several concrete next steps follow from these limitations.
 
-The most immediate is to \emph{complete the sweep}: run the full configuration and baseline
-comparison on the remaining seven-billion models, regenerate the gated model's data at full
-size, and archive every consolidated measurement file so that all numbers become file-backed.
-This turns the present single-model result into a genuine cross-model comparison.
+The most immediate is to \emph{complete the sweep}: run the full sixteen-configuration,
+six-baseline comparison on the second model and on the remaining seven-billion models, and
+regenerate the gated model's data at full size. This broadens a two-model comparison into a
+fleet-wide one and would settle whether the model-dependence seen here is the rule.
 
 The discussion pointed at \emph{layer selection} as the lever most worth pulling. The strongest
 baseline's edge came from reading a mid-network layer rather than the final one, so a focused

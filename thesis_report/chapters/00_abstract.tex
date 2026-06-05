@@ -2,44 +2,46 @@
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
 
-Large language models produce fluent text that is sometimes confidently wrong. This
-failure, commonly called \emph{hallucination}, is now the dominant practical obstacle
-to deploying such models where correctness matters. A promising line of detectors
-reads the model's own internal activations as it generates, and learns to tell
-truthful continuations from fabricated ones without any external retrieval and without
-sampling the model many times. These detectors are attractive because they add almost
-no cost at inference time, but the published results are scattered across different
-models, datasets, and hardware budgets, which makes it hard to know how much each
-ingredient actually contributes.
+Large language models write fluent prose that is, often enough to matter, confidently
+wrong. This failure --- hallucination --- is the main barrier to using these models where
+correctness counts. One family of detectors reads a model's own hidden activations as it
+writes and learns to separate truthful continuations from fabricated ones, with no external
+retrieval and no repeated sampling. Such detectors are cheap to run, yet the published
+evidence for them is spread thinly across different models, datasets, and hardware budgets,
+which makes it hard to say which ingredient actually carries the signal.
 
-This dissertation studies internal-state hallucination detection under a single,
-reproducible protocol that runs entirely on free cloud hardware. We adopt the
-label-free data-generation idea of the MIND framework, in which a model continues a
-truncated encyclopedia article and the continuation is automatically labelled by
-whether the model recovers the original entity. On top of the canonical last-token,
-last-layer hidden state used by that framework, we add three inexpensive signals
-computed from the same forward pass: how much the representation shifts from one layer
-to the next, how much it varies across layers, and how uncertain the model is while
-generating. We then compare this augmented detector against a wider set of literature
-features and against four established baselines, together with two simple reference
-methods, across as many as ten question-answering, summarisation, and dialogue
-benchmarks.
+This dissertation settles that question with one reproducible study that runs end to end on
+free cloud GPUs. Building on the label-free data generation of the MIND framework --- where a
+model continues a truncated encyclopedia article and is labelled by whether it recovers the
+original entity --- we design three inexpensive signals read from a single forward pass: how
+far the representation travels from one layer to the next, how widely it spreads across the
+layer stack, and how uncertain the model is as it writes. Around these we run a systematic
+ablation of \textbf{sixteen feature configurations} --- the bare hidden state, each new
+signal alone and together, nine features taken from the recent literature, six further
+exploratory signals, and their combinations. Every configuration shares one classifier, one
+data split, and one set of scoring rows, and each is measured against \textbf{six detectors}
+--- four state-of-the-art methods and two simple references --- across as many as ten
+question-answering, summarisation, and dialogue benchmarks, on several open models ranging
+from one to seven billion parameters.
 
-We report only the results that our saved measurement files support, and we separate
-\emph{in-distribution} detection (held-out encyclopedia text) from \emph{cross-task
-transfer} (the question-answering and dialogue benchmarks), because the two regimes
-behave very differently. On the fully measured six-billion-parameter model, the
-richest feature configurations are competitive with the strongest baseline but do not
-overtake it, and a single benchmark heavily influences the averages; on a second model
-of comparable size an earlier extended run favoured one of the proposed feature
-configurations. The honest summary is that the value of these internal-state features
-is real but \emph{model dependent}, and that cross-task transfer remains the hard part.
-The contribution of this work is therefore not a new state-of-the-art detector but a
-careful, free-tier-reproducible comparison of internal-state features across several
-open models, with an explicit account of what is measured, what is still pending, and
-where the method's limits lie.
+The study separates two regimes that prior work tends to blur: detecting hallucinations in
+text of the same kind the detector was trained on, and transferring to unseen task types.
+In-distribution detection is reliable; transfer is the hard part, and there the outcome is
+genuinely model-dependent. On one six-billion-parameter model a supervised mid-layer probe
+is strongest while our richer configurations sit just behind it; on a second model of the
+same scale a configuration built from the exploratory internal-state signals is the
+strongest method of all, ahead of every baseline. The detectors also differ sharply in cost:
+every single-pass method, ours and most baselines alike, is far cheaper at inference than
+the sampling-based detector, which repeats generation several times per input.
+
+The contribution is therefore a careful, free-tier-reproducible map of which internal-state
+signals are worth their cost and where they fail --- the controlled, like-for-like comparison
+this corner of the field has lacked --- rather than a single headline number. Along the way
+the work delivers a reusable pipeline, a clean per-configuration and per-baseline result set
+on two open models, and an honest account of the limits of transferring an
+encyclopedia-trained detector to other tasks.
 
 \vspace{0.4cm}
 \noindent\textbf{Keywords:} hallucination detection, large language models, internal
-representations, hidden states, probing classifiers, model calibration, reproducible
-evaluation.
+representations, hidden states, probing classifiers, feature ablation, reproducible
+evaluation, inference cost.

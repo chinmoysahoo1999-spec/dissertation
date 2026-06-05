@@ -11,16 +11,35 @@ models and the free-hardware setup under which everything runs.
 
 \section{Overall pipeline}
 
-The detector reads signals from one forward pass of a frozen language model and feeds
-them to a small classifier. Figure~\ref{fig:pipeline} shows the flow. A prompt --- during
-training, a truncated encyclopedia article; during evaluation, a benchmark question or
-document --- is given to the model, which generates a short continuation. From that single
-pass we read four things: the canonical hidden state (the last-token vector at the final
-layer), and three scalar summaries of the model's internal behaviour, namely how much its
-representation drifts from layer to layer, how much it varies across layers, and how
-uncertain it is while generating. These are concatenated into one feature vector and
-passed to a five-layer perceptron that outputs a hallucination probability. The model
-weights are never updated; only the small classifier is trained.
+At a high level the detector reads signals from one forward pass of a frozen language model
+and feeds them to a small trained classifier; the language model's own weights are never
+touched. Figure~\ref{fig:pipeline} shows the flow for a single input. What makes this
+practical is that everything the detector needs --- the final hidden state, the
+layer-by-layer activations, the attention maps, and the output distribution --- is already
+produced when the model reads a prompt and writes a short continuation. Reading those signals
+off therefore costs almost nothing on top of ordinary generation.
+
+The full study runs as five stages, each treated in its own section below.
+
+\begin{enumerate}[leftmargin=2.2em,itemsep=0.3em,label=\textbf{Stage \arabic*.}]
+\item \textbf{Data generation} turns raw encyclopedia text into labelled training examples
+with no human annotation, and does so separately for each target model
+(Section~\ref{sec:labels}).
+\item \textbf{Feature extraction} runs the model once over each example and records the
+canonical hidden state together with the scalar signals the configurations draw on
+(Sections~\ref{sec:trio}--\ref{sec:wider}).
+\item \textbf{Classifier training} fits one small perceptron per configuration on a fixed
+split of the generated data (Section~\ref{sec:classifier}).
+\item \textbf{In-distribution evaluation} scores each trained detector on held-out text of
+the same kind it was trained on.
+\item \textbf{Transfer evaluation} scores each detector on ten external benchmarks it never
+saw during training, alongside six baseline detectors run through the same pipeline on the
+same rows (Sections~\ref{sec:protocol} and~\ref{sec:baselines}).
+\end{enumerate}
+
+Holding stages one, three, four and five fixed and changing only the feature set in stage two
+is exactly what turns the study into a controlled comparison of \emph{features} rather than of
+incidental differences in setup.
 
 \begin{figure}[t]
 \centering
@@ -75,10 +94,24 @@ for each target model.}
 \end{algorithm}
 
 Two properties of this procedure matter. It produces balanced, per-model data at no
-annotation cost, and --- because the prior literature shows probes do not transfer between
-models --- it is run \emph{separately for each model} we study, so the training data always
-comes from the same model the detector will monitor. For the larger models we generate one
-thousand examples per class, two thousand in total.
+annotation cost, and --- because probes do not transfer well between models --- it is run
+\emph{separately for each model} we study, so the training data always comes from the same
+model the detector will later monitor. For the larger models we generate one thousand
+examples per class, two thousand in total.
+
+A few implementation details make the procedure concrete. The raw text is streamed from
+English Wikipedia, so no fixed corpus has to be downloaded in advance. For each article we
+keep the opening passage, run a named-entity recogniser over it, and pick at random one
+entity that begins after the first sentence. We tokenise the article up to that entity and
+let the model generate a short window of tokens. The top-four rule is applied twice: once on
+the entity's first token, which decides the label, and once step by step, to find where the
+model's continuation rejoins the original article, so that the article's true suffix can be
+grafted back on cleanly and the faithful and hallucinated versions differ only in the entity
+span. The per-step output distributions produced during this generation are stored at the
+same time, which is what later makes the predictive-entropy feature available without a
+second forward pass. Generations that yield an empty entity, that merely echo the original
+entity, or that never rejoin the article are discarded, and the surviving examples are kept
+balanced between the two classes.
 
 \section{The canonical feature}
 
@@ -143,37 +176,88 @@ sampling, no auxiliary model, and no optimal-transport computation, which keeps 
 clearly distinct from the prior study discussed in Section~\ref{sec:internal} and keeps
 their cost negligible.
 
-\section{Two wider feature families}
+\section{Two further feature families}
+\label{sec:wider}
 
-To place the three core features in context, the ablation also includes two further
-families of scalar features, all read from the same single pass.
+To place the three core features in context, the ablation also evaluates two further
+families of scalar features, every one of them read from the same single forward pass. The
+first family gathers signals proposed in recent internal-state work; the second is a more
+exploratory set of geometric and attention-based signals assembled for this study.
 
-\paragraph{Literature features.}
-A set of nine scalars is drawn from recent internal-state work. They include a
-\emph{lookback ratio} that compares attention paid to the context against attention paid
-to freshly generated tokens~\cite{chuang2024lookback}; an \emph{attention-sink} score
-that measures how much attention mass collapses onto the first
-token~\cite{xiao2023streamingllm}; a lightweight eigenvalue-based dispersion of the hidden
-states in the spirit of the INSIDE method~\cite{chen2024inside}; an internal-consistency
-ratio; a \emph{logit-lens divergence}, the Jensen--Shannon divergence (abbreviated JSD: a
-symmetric measure of how different two probability distributions are) between the
-vocabulary distributions read off from an early and a late layer, following the
-contrast-between-layers idea~\cite{chuang2024dola}; an attention-head entropy; a
-token-level confidence margin in the spirit of adaptive token-selection
-work~\cite{niu2025hami}; the rank of the chosen token in the output distribution; and a
-within-layer dispersion of token embeddings in the spirit of reasoning-aware
-detection~\cite{d2hscore2025}. A tenth, supervised mid-layer probe feature is left for
-future work because it would require training a separate probe inside the pipeline; we
-note its omission rather than quietly dropping it.
+\subsection{Literature features}
+\label{sec:litfeat}
 
-\paragraph{Exploratory features.}
-A second set of six scalars is more speculative and is included to test whether less
-conventional signals help. In reader-facing terms these are: a small projection of the
-hidden state through the model's output vocabulary head; a measure of the curvature of the
-layer trajectory; the slope and variance of the model's confidence over the course of the
-generation; an effective rank of the attention matrix; an alignment score between the
-generated text and the prompt; and a divergence of the per-head importance distribution.
-These are reported for completeness; we do not lean on them for any central claim.
+Nine scalars are taken from the recent literature. Each is computed from the hidden states,
+the attention maps, or the output distribution of the single pass, and each is reduced to
+one number per example.
+
+\begin{enumerate}[leftmargin=2.1em,itemsep=0.25em,label=\textbf{(\arabic*)}]
+\item \textbf{Lookback ratio} --- the share of the final-layer attention, at the last
+position, that falls on the prompt tokens rather than on the freshly generated ones; a low
+value means the model has stopped attending to its context~\cite{chuang2024lookback}.
+\item \textbf{Attention-sink score} --- the average fraction of attention mass that
+collapses onto a small set of ``sink'' tokens (sentence punctuation and special tokens),
+averaged over layers~\cite{xiao2023streamingllm}.
+\item \textbf{Spectral dispersion} --- the log-determinant of the covariance of the
+last-layer token representations, a lightweight version of the eigenvalue score used by the
+INSIDE method~\cite{chen2024inside}.
+\item \textbf{Internal-update ratio} --- the mean, over layers, of the size of each layer's
+update to the last-token representation relative to that representation's own norm; it
+measures how much work the upper layers are still doing.
+\item \textbf{Logit-lens divergence} --- the Jensen--Shannon divergence (abbreviated JSD: a
+symmetric measure of how different two probability distributions are) between the vocabulary
+distribution read off from a middle layer and the final output distribution, following the
+contrast-between-layers idea~\cite{chuang2024dola}.
+\item \textbf{Attention-head entropy} --- the average entropy of the last-position attention
+distribution, taken across heads and layers; diffuse attention gives a high value.
+\item \textbf{Confidence margin} --- the mean gap between the largest and second-largest
+next-token probabilities over the generated positions, in the spirit of adaptive
+token-selection work~\cite{niu2025hami}.
+\item \textbf{Token rank} --- the mean rank of the token the model actually emitted within
+its own predicted distribution at each step.
+\item \textbf{Intra-layer dispersion} --- the mean distance of the last-layer token
+embeddings from their centroid, a within-layer spread measure in the spirit of
+reasoning-aware detection~\cite{d2hscore2025}.
+\end{enumerate}
+
+A tenth feature in this family, a supervised mid-layer probe of the SAPLMA kind, is deferred
+because it would require training a separate probe inside the pipeline; we record its
+omission rather than dropping it silently. The nine features above are exactly those used in
+the configurations that follow.
+
+\subsection{Additional exploratory features}
+\label{sec:newfeat}
+
+A second set of six signals probes less conventional geometry and attention behaviour. They
+were added after the literature set, and they are not a throwaway: as
+Chapter~\ref{ch:results} reports, one combination of them gives the strongest result on one
+of the two fully-measured models, so we treat them as part of the contribution rather than
+an afterthought.
+
+\begin{enumerate}[leftmargin=2.1em,itemsep=0.25em,label=\textbf{(\arabic*)}]
+\item \textbf{Unembedding-residual projection} --- an eight-number projection of the
+last-token hidden state onto the directions that the model's output (unembedding) matrix
+uses \emph{least}, i.e.\ energy the model carries internally but barely turns into output.
+This is the only feature in the study that contributes more than one scalar (eight).
+\item \textbf{Layer-trajectory curvature} --- how sharply the path traced by the
+representation bends from one layer to the next, summarised by its mean and its maximum (two
+numbers).
+\item \textbf{Confidence trajectory} --- the slope and the variance of the model's
+log-confidence across the generated tokens (two numbers); a falling or jittery confidence
+trajectory is a candidate warning sign.
+\item \textbf{Effective attention rank} --- the effective number of directions a
+middle-layer attention map spreads over, read from the entropy of its singular values.
+\item \textbf{Prompt-echo alignment} --- the cosine similarity between the average
+middle-layer representation of the prompt tokens and that of the generated tokens; it
+measures how much the generation still echoes the prompt.
+\item \textbf{Head-importance divergence} --- how unevenly attention concentration is spread
+across the heads of a middle layer, expressed as a coefficient of variation.
+\end{enumerate}
+
+Used together these six contribute fourteen numbers (the eight-dimensional projection plus
+six further scalars). Like the core three, every one is an intra-sample quantity from the
+single forward pass; none requires extra sampling, an auxiliary model, or an
+optimal-transport computation.
 
 \section{Feature configurations}
 \label{sec:configs}
@@ -221,22 +305,25 @@ C9  & Canonical + lookback/lens/margin trio                     & 3  & 4099 \\
 C10 & Canonical + all nine literature features                  & 9  & 4105 \\
 C11 & Canonical + internal-state trio + lookback/lens/margin     & 6  & 4102 \\
 C12 & Canonical + internal-state trio + all literature           & 12 & 4108 \\
-C13 & Canonical + vocab projection + curvature                  & 10 & 4106 \\
-C14 & Canonical + confidence-trajectory/rank/echo               & 4  & 4100 \\
-C15 & Canonical + vocab projection/curvature/confidence         & 12 & 4108 \\
-C16 & Canonical + internal-state trio + all exploratory          & 18 & 4114 \\
+C13 & Canonical + unembedding projection + curvature           & 10 & 4106 \\
+C14 & Canonical + confidence trajectory + attn.\ rank + prompt echo & 4 & 4100 \\
+C15 & Canonical + unembedding proj.\ + curvature + confidence    & 12 & 4108 \\
+C16 & Canonical + internal-state trio + all six exploratory      & 18 & 4114 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \section{The classifier}
+\label{sec:classifier}
 
 Every configuration uses the same classifier, so that differences in measured performance
 come from the features and not from the model on top of them. The classifier is a
-five-layer perceptron with progressively narrowing hidden widths and rectified-linear
-activations, ending in a two-way softmax that outputs the probability of each class. It is
-trained with the cross-entropy loss using the Adam optimiser at a learning rate of
-$5\times10^{-4}$ and weight decay $10^{-5}$, with a batch size of $32$, for ten epochs.
+five-layer perceptron. The input layer maps the feature vector to $512$ units; three hidden
+layers of $256$, $128$ and $64$ units follow, each with a rectified-linear activation and a
+dropout of $0.2$ after the first; and a final linear layer produces a two-way softmax over
+\{faithful, hallucinated\}. It is trained with the cross-entropy loss using the Adam
+optimiser at a learning rate of $5\times10^{-4}$ and weight decay $10^{-5}$, with a batch
+size of $32$, for ten epochs.
 The scalar and canonical features are standardised by a scaler fitted on the training
 split only, and the data is split $80/20$ into training and test sets with a fixed random
 seed of $42$ so that every configuration sees exactly the same partition. The use of a

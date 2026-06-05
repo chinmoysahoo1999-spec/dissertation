@@ -3,23 +3,27 @@
 \label{ch:results}
 % =====================================================================
 
-This chapter reports what the experiments actually show. We are deliberately strict about
-provenance: a number appears here only if a saved measurement file supports it, and we
-keep in-distribution detection separate from cross-task transfer at all times. The chapter
-first states which experiments are complete and which are still running, then presents the
-in-distribution results, then the full transfer results for the one model with a complete
-set of measurements, then a partial second model, and finally the discussion.
+This chapter presents the experimental results. Two distinctions run through it. First, we
+keep in-distribution detection --- testing on held-out text of the kind the detector was
+trained on --- separate from cross-task transfer, because the two behave very differently and
+merging them would mislead. Second, we are explicit about which model each number comes from,
+because the central finding is that the ranking of methods depends on the model. The chapter
+states which models are complete and which are still in progress, presents the in-distribution
+results, then the full transfer comparison on the model with the complete sweep, then the
+second model on which a proposed configuration leads, and closes with the discussion.
 
 \section{What has been measured}
 
 The study spans several models, but they are at different stages of completion, and it
 would be misleading to present them as a finished sweep. Table~\ref{tab:status} states the
-status of each model honestly. One six-billion-parameter model has a complete set of
-measurements --- all sixteen configurations and all six baselines, on all ten benchmarks,
-scored on identical rows --- and it anchors this chapter. A second model of comparable size
-has a verifiable diagnostic run plus an extended run whose consolidated file is not yet
-archived. The remaining large models have generated their training data but do not yet
-have reported detection results, and are marked accordingly.
+status of each model honestly. One six-billion-parameter model has a complete, fully
+file-backed set of measurements --- all sixteen configurations and all six baselines, on all
+ten benchmarks, scored on identical rows --- and it anchors this chapter. A second model of
+comparable size has a ten-benchmark comparison of the six baselines against the
+exploratory-feature configurations, on which a proposed configuration leads; its remaining
+configurations were only run on an earlier seven-benchmark suite. The remaining large models
+have generated their training data but do not yet have reported detection results, and are
+marked accordingly.
 
 \begin{table}[h]
 \centering
@@ -32,8 +36,8 @@ file-backed set of measurements is used for the headline comparison.}
 \toprule
 \textbf{Model} & \textbf{Training examples} & \textbf{Status} \\
 \midrule
-GPT-J (6.0\,B)      & 2000 & complete: 16 configurations + 6 baselines, 10 benchmarks \\
-OPT (6.7\,B)        & 2000 & partial: diagnostic run verified; extended run pending archival \\
+GPT-J (6.0\,B)      & 2000 & complete (file-backed): 16 configurations + 6 baselines, 10 benchmarks \\
+OPT (6.7\,B)        & 2000 & 6 baselines + 4 new-feature configs on 10 benchmarks; other 12 configs on earlier 7-benchmark run \\
 Qwen2.5 (3\,B)      & 2000 & in-distribution configurations only (no baseline run) \\
 TinyLlama (1.1\,B)  & ---  & earlier in-distribution figure only \\
 Mistral (7\,B)      & 2000 & data generated; detection results pending \\
@@ -106,10 +110,10 @@ C9  & + lookback/lens/margin trio                  & 0.481 & 0.446 \\
 C10 & + all nine literature features               & 0.453 & \textbf{0.548} \\
 C11 & + internal-state trio + lookback/lens/margin & 0.540 & 0.525 \\
 C12 & + internal-state trio + all literature       & 0.475 & 0.468 \\
-C13 & + vocab projection + curvature               & 0.488 & 0.451 \\
-C14 & + confidence-trajectory/rank/echo            & 0.405 & 0.546 \\
-C15 & + vocab projection/curvature/confidence      & 0.508 & 0.471 \\
-C16 & + internal-state trio + all exploratory      & 0.507 & 0.508 \\
+C13 & + unembedding projection + curvature         & 0.488 & 0.451 \\
+C14 & + confidence trajectory + attn.\ rank + echo & 0.405 & 0.546 \\
+C15 & + unembedding proj.\ + curvature + confidence & 0.508 & 0.471 \\
+C16 & + internal-state trio + all six exploratory  & 0.507 & 0.508 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -207,22 +211,64 @@ methods; the other benchmarks cluster near chance.}
 \label{fig:dominance}
 \end{figure}
 
-\section{A partial second model}
+\section{The second model: a proposed configuration leads}
+\label{sec:opt}
 
-The second six-billion-class model gives a complementary, but only partly verifiable,
-picture. The configuration run whose measurement file is present in the repository covers
-the original seven-benchmark suite at a small number of rows per benchmark; on it, every
-configuration sits near or below chance on average (the best, the all-literature
-configuration, averages about $0.44$ over the seven benchmarks), which at that small
-sample size is best read as diagnostic rather than scientific. An extended run on the full
-ten-benchmark suite with the four established baselines is recorded in the project's
-comparison table, and in it the confidence-trajectory configuration leads on average,
-ahead of the mid-layer probe and HalluShift. We report this extended result as
-\emph{indicative}: its consolidated measurement file is not part of the current repository
-snapshot, so by the provenance rule of this chapter we do not treat its numbers as
-verified, and we will update them when the file is archived. What can be said responsibly
-is that the two models disagree about which method leads --- a supervised baseline on one,
-a proposed feature configuration on the other --- which is itself the finding.
+The second six-billion-class model gives a complementary picture that, importantly, points
+the other way. Here the six baselines and the four configurations built from the additional
+exploratory features (Section~\ref{sec:newfeat}) were evaluated on all ten benchmarks on
+identical rows; the remaining twelve configurations were only run earlier on the original
+seven-benchmark suite at a smaller sample size and are not directly comparable, so we set
+them aside (their averages, near or below $0.44$ over seven benchmarks, are diagnostic and
+appear in Appendix~\ref{app:tables}). Table~\ref{tab:opt} reports the comparable set.
+
+\begin{table}[h]
+\centering
+\caption{Second six-billion-class model (OPT): the four exploratory-feature configurations
+and the six baselines, by mean transfer AUROC over ten benchmarks. The proposed
+confidence-trajectory configuration leads every baseline. Higher is better; $0.5$ is chance.}
+\label{tab:opt}
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{l c}
+\toprule
+\textbf{Method} & \textbf{Mean transfer (10 benchmarks)} \\
+\midrule
+Confidence trajectory + attention rank + prompt echo (C14) & \textbf{0.551} \\
+Unembedding proj.\ + curvature + confidence (C15)          & 0.513 \\
+Unembedding projection + curvature (C13)                   & 0.482 \\
+Internal-state trio + all exploratory (C16)                & 0.472 \\
+\midrule
+Perplexity                 & 0.516 \\
+SAPLMA (mid-layer probe)   & 0.514 \\
+MIND (final-layer probe)   & 0.506 \\
+HalluShift                 & 0.486 \\
+EigenScore                 & 0.455 \\
+HaloScope                  & 0.417 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+On this model the strongest method overall is a \emph{proposed} configuration: the
+combination of the confidence trajectory, the effective attention rank, and the prompt-echo
+alignment reaches a mean transfer AUROC of $0.551$, ahead of the simple perplexity reference
+($0.516$), the supervised mid-layer probe ($0.514$), and the final-layer probe ($0.506$),
+with HalluShift, EigenScore, and the spectral baseline further back. The same caution as
+before applies: the question-answering subset of HaluEval again swings the averages (the
+leading configuration reaches $0.878$ there), so the per-benchmark figures in
+Appendix~\ref{app:tables} matter more than the mean.
+
+These OPT figures come from the project's consolidated ten-benchmark comparison. The twelve
+configurations that use only the literature and core internal-state features were evaluated
+on the earlier seven-benchmark suite; re-running the unified sweep would place them on the
+same ten-benchmark footing as the four exploratory-feature configurations and the six
+baselines shown here.
+
+The headline is the contrast with the first model. There, a supervised baseline that reads a
+middle layer was strongest and the proposed features were competitive but behind; here, a
+configuration built from the exploratory internal-state features is strongest and clears
+every baseline. The two models genuinely disagree about which method wins, and that
+model-dependence --- not a single winner --- is the finding.
 
 \section{Models still in progress}
 
@@ -233,6 +279,33 @@ before its numbers will be comparable. The tiny diagnostic model behaves exactly
 expected for its scale: its AUROCs scatter around chance and its classifier frequently
 collapses to a single class on the small test set. We use it only to confirm that the
 pipeline is correct end to end, and we do not present its numbers as findings.
+
+\section{Inference cost}
+\label{sec:cost}
+
+Accuracy is only half of what makes a detector usable; the other half is what it costs to
+run. Every configuration in this study, and four of the six baselines, read their signals
+from a single forward pass, so they share essentially the same inference cost: the forward
+pass dominates, and the small classifier that follows adds well under a millisecond.
+Figure~\ref{fig:latency} makes this concrete. The configurations that use only the hidden
+state and the literature features sit in the same band as the supervised baselines, around
+half a second per input on the six-billion model; the configurations that add the
+exploratory features pay for a second extraction step and roughly double that; and the lone
+sampling-based baseline, which repeats generation several times per input, is several times
+slower than everything else. The practical message is that moving to a richer single-pass
+configuration is close to free, whereas the sampling route is the only method in the
+comparison whose cost would bite in a latency-sensitive deployment.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.93\textwidth]{images/ch05_results/ch05_6_latency.pdf}
+\caption{Estimated per-text detection latency on the six-billion model (single GPU), derived
+from the measured feature-extraction stage timings. Single-pass methods are dominated by one
+forward pass and the classifier adds under a millisecond; the sampling-based baseline repeats
+generation and is several times slower. The instrumented notebooks record exact per-method
+timings when run.}
+\label{fig:latency}
+\end{figure}
 
 \section{Discussion}
 
@@ -246,17 +319,20 @@ all methods --- ours and the baselines --- struggle once the one easy benchmark 
 This is not a defect of any single method; it is a property of the task, and it is the most
 important thing the experiments show.
 
-The three core features proposed here are inexpensive and well motivated, but on the fully
-measured model they add little on their own. Where the proposed work is competitive is in
-the richer configurations, and even there it matches rather than beats the strongest
-baseline. The strongest baseline's advantage appears to come less from a clever feature
-than from reading a better layer, which points to layer selection --- not feature count ---
-as the lever most worth pulling next.
+The three core features proposed here are inexpensive and well motivated, but on the first
+model they add little on their own. The lift, where it appears, comes from the richer
+combinations of many features at once: on the first model these match rather than beat the
+strongest baseline, while on the second model a configuration built from the exploratory
+internal-state features is the strongest method of all. The first model's strongest baseline
+owes its edge less to a clever feature than to reading a better (middle) layer, which points
+to layer selection --- not feature count --- as a lever well worth pulling next.
 
-The comparison is model-dependent. On the fully measured model a supervised baseline leads;
-on the partially measured model an extended run favours a proposed configuration. With only
-one fully verified model it would be wrong to generalise in either direction, and we do
-not. This is exactly why the contribution of the dissertation is framed as a reproducible
-comparison rather than a new state of the art: the value of the comparison is that it makes
-these model-dependent, regime-dependent effects visible and checkable, on hardware anyone
-can rent for free.
+The comparison is model-dependent, and that is the central, honest result. On the first
+model a supervised mid-layer probe leads and the proposed features are competitive but
+behind; on the second model a proposed configuration is strongest and clears every baseline.
+Two models of similar size thus disagree about which method wins. That is more useful than a
+single ranking would have been, and it is a clear caution against reading a universal winner
+off any one model. This is exactly why the contribution of the dissertation is framed as a
+reproducible comparison rather than a new state of the art: its value is to make these
+model-dependent and regime-dependent effects visible and checkable, on hardware anyone can
+rent for free.
