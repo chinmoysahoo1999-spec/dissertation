@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OPT-6.7B — Variants vs Baselines (Multi-task AUROC)</title>
+<style>
+  @page { size: A4 landscape; margin: 12mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color:#1a1a1a; margin:24px; }
+  h1 { font-size:18px; margin:0 0 2px; }
+  .sub { font-size:12px; color:#444; margin:0 0 14px; }
+  table { border-collapse: collapse; font-size:12.5px; margin:0 auto; }
+  th, td { border:1px solid #d0d0d0; padding:5px 8px; text-align:center; white-space:nowrap; }
+  th { background:#f2f2f2; font-weight:600; }
+  td.method, th.method { text-align:left; font-weight:600; background:#fafafa; }
+  tr.group td { background:#eef2f7; font-style:italic; text-align:left; font-weight:600; color:#333; }
+  .avg { background:#fbfbf4; }
+  .best { color:#d11; font-weight:700; }      /* red  = best */
+  .second { color:#127a2e; font-weight:600; }  /* green = 2nd */
+  .third { color:#1456d6; font-weight:600; }   /* blue = 3rd */
+  .legend { font-size:12px; color:#333; margin-top:14px; line-height:1.6; }
+  .legend b { color:#000; }
+  .sw { font-weight:700; }
+  @media print { body { margin:0; } .noprint { display:none; } }
+  .hint { font-size:12px; background:#fff8e1; border:1px solid #f0e0a0; padding:8px 10px; border-radius:6px; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<div class="hint noprint">To save as PDF: press <b>Ctrl/Cmd&nbsp;+&nbsp;P</b> → Destination <b>Save as PDF</b> → Layout <b>Landscape</b>.</div>
+<h1>Hallucination Detection on OPT-6.7B — Proposed Variants vs. SOTA Baselines</h1>
+<p class="sub">Multi-task <b>AUROC</b> (&uarr; higher is better) — 500 samples per dataset (first-<i>N</i>), identical evaluation portion for every method.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th class="method">Method</th>
+      <th>TruthQA</th><th>TrivQA</th><th>CoQA</th><th>TydiQA</th>
+      <th>HE-QA</th><th>HE-Sum</th><th>HE-Dial</th>
+      <th>NQ</th><th>HotpotQA</th><th>PopQA</th><th class="avg">Avg</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="group"><td colspan="12">Proposed — MIND+ internal-representation variants (this work)</td></tr>
+    <tr><td class="method">M</td><td>0.449</td><td class="best">0.585</td><td class="best">0.550</td><td>0.434</td><td>0.448</td><td>0.415</td><td>0.437</td><td class="third">0.521</td><td>0.446</td><td class="best">0.530</td><td class="avg">0.482</td></tr>
+    <tr><td class="method">N</td><td class="third">0.587</td><td>0.525</td><td class="second">0.537</td><td>0.493</td><td class="best">0.878</td><td>0.503</td><td class="best">0.554</td><td>0.518</td><td>0.439</td><td>0.477</td><td class="avg best">0.551</td></tr>
+    <tr><td class="method">O</td><td>0.515</td><td class="third">0.567</td><td>0.523</td><td class="best">0.528</td><td class="third">0.764</td><td>0.383</td><td class="third">0.482</td><td>0.468</td><td>0.414</td><td class="third">0.488</td><td class="avg third">0.513</td></tr>
+    <tr><td class="method">P</td><td>0.388</td><td class="second">0.572</td><td class="third">0.536</td><td>0.479</td><td>0.521</td><td>0.439</td><td>0.430</td><td>0.407</td><td>0.428</td><td class="second">0.518</td><td class="avg">0.472</td></tr>
+    <tr class="group"><td colspan="12">SOTA baselines</td></tr>
+    <tr><td class="method">SAPLMA</td><td>0.488</td><td>0.478</td><td>0.489</td><td class="third">0.502</td><td class="second">0.787</td><td class="second">0.534</td><td>0.382</td><td class="second">0.553</td><td class="third">0.507</td><td>0.418</td><td class="avg second">0.514</td></tr>
+    <tr><td class="method">HaloScope</td><td class="best">0.665</td><td>0.500</td><td>0.479</td><td>0.481</td><td>0.272</td><td>0.136</td><td>0.377</td><td>0.509</td><td class="best">0.541</td><td>0.210</td><td class="avg">0.417</td></tr>
+    <tr><td class="method">HalluShift</td><td class="second">0.646</td><td>0.522</td><td>0.524</td><td class="second">0.522</td><td>0.465</td><td class="best">0.547</td><td>0.464</td><td>0.509</td><td class="second">0.515</td><td>0.143</td><td class="avg">0.486</td></tr>
+    <tr><td class="method">EigenScore</td><td>0.504</td><td>0.519</td><td>0.520</td><td>0.407</td><td>0.500</td><td class="third">0.501</td><td class="second">0.499</td><td class="best">0.588</td><td>0.444</td><td>0.071</td><td class="avg">0.455</td></tr>
+  </tbody>
+</table>
+
+<div class="legend">
+  <b>Colour key (ranked within each column):</b>
+  <span class="best sw">red = best</span> &nbsp;·&nbsp;
+  <span class="second sw">green = 2nd best</span> &nbsp;·&nbsp;
+  <span class="third sw">blue = 3rd best</span>.<br>
+  <b>Proposed variants:</b> M = embedding+URP+LTC; &nbsp; N = embedding+CTS+EAR+PEA; &nbsp; O = embedding+URP+LTC+CTS; &nbsp; P = embedding+MIND+ (D,V,H)+all new features.<br>
+  <b>Datasets:</b> TruthQA=TruthfulQA, TrivQA=TriviaQA, HE-QA/Sum/Dial = HaluEval (QA / Summarisation / Dialogue), NQ = NQ-Open.<br>
+  <b>Notes:</b> Backbone <code>facebook/opt-6.7b</code>; HaluEval columns score 1000 rows (500 prompts × right/wrong). Variant run had 1 feature-extraction failure of 2000 records (negligible). Variant AUROCs from <code>kaggle_opt_67b_all_variants_NEW_results.json</code>; baselines transcribed from the Kaggle console.
+</div>
+</body>
+</html>

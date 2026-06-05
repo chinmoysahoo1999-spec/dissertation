@@ -1,0 +1,98 @@
+% =====================================================================
+\chapter{Conclusion and Future Work}
+\label{ch:conclusion}
+% =====================================================================
+
+\section{Summary}
+
+This dissertation studied whether hallucinations in large language models can be detected
+cheaply by reading the model's own internal representations, and which of the many proposed
+internal signals are worth their cost. We adopted the label-free, per-model data generation
+of the MIND framework, kept its canonical last-token, last-layer hidden state as a backbone,
+and added three inexpensive signals from the same forward pass: how much the representation
+drifts between layers, how much it varies across layers, and how uncertain the model is while
+generating. We placed these in a controlled ablation alongside literature features and more
+speculative features, fixed a single classifier and a single evaluation protocol, and
+compared everything against four established baselines and two simple reference methods on a
+suite of up to ten benchmarks --- all on free cloud hardware.
+
+The honest summary of the findings is threefold. First, detection of held-out
+in-distribution text works at a useful level, and better at larger data scales, but
+transferring an encyclopedia-trained probe to question answering, summarisation, and dialogue
+is hard: on transfer, every method we tested sits close to chance once a single unusually
+separable benchmark is set aside. Second, on the one model for which we have a complete set
+of file-backed measurements, the three core features add little on their own, the gains come
+from richer feature combinations, and even the best configurations match rather than beat the
+strongest baseline --- a supervised probe whose advantage seems to come from reading a better
+layer rather than from a cleverer feature. Third, the result is model-dependent: a second model
+of comparable size, in an extended run, favoured one of the proposed configurations instead.
+With only one fully verified model, we deliberately do not generalise.
+
+The contribution is therefore not a new state-of-the-art detector. It is a unified,
+free-tier-reproducible comparison of internal-state hallucination features across several open
+models, built so that the regime-dependent and model-dependent effects above are visible and
+checkable rather than hidden inside a single headline number.
+
+\section{Limitations}
+
+We state the limitations plainly, because several of them bound how far the conclusions can
+be taken.
+
+\textbf{One fully measured model.} Only one model has a complete, file-backed set of
+configuration and baseline measurements. The second large model is only partly verifiable,
+and the remaining large models have generated data but no reported detection results. The
+headline comparison therefore rests on a single model, and the cross-model claim is
+correspondingly cautious.
+
+\textbf{Modest sample sizes.} The unified runs use two thousand training examples per model
+and evaluate on a few hundred rows per benchmark. At this scale, individual AUROCs are noisy,
+classifiers sometimes collapse to a single class, and small differences between methods should
+not be over-interpreted. The earlier, larger-scale in-distribution figures suggest that more
+data helps, but we did not re-run the full ablation at that scale.
+
+\textbf{Free-tier constraints.} The nine-hour session limit, the weekly GPU budget, and the
+sixteen-gigabyte cards shaped the design: some baselines were dropped for cost, evaluation was
+capped at a fixed number of rows, and one gated model could not be run at full data size.
+These are reasonable trade-offs for a reproducible free-hardware study, but they are
+constraints, and a better-resourced replication might reach steadier numbers.
+
+\textbf{One benchmark dominates.} The transfer averages on the fully measured model are
+carried by a single easy benchmark. The rankings should be read with that in mind, and
+per-benchmark results (Appendix~\ref{app:tables}) are more informative than the averages.
+
+\textbf{Pending archival.} The extended run on the second model is recorded in a comparison
+table but its consolidated measurement file is not in the current snapshot, so its numbers are
+reported as indicative rather than verified.
+
+\section{Future work}
+
+Several concrete next steps follow from these limitations.
+
+The most immediate is to \emph{complete the sweep}: run the full configuration and baseline
+comparison on the remaining seven-billion models, regenerate the gated model's data at full
+size, and archive every consolidated measurement file so that all numbers become file-backed.
+This turns the present single-model result into a genuine cross-model comparison.
+
+The discussion pointed at \emph{layer selection} as the lever most worth pulling. The strongest
+baseline's edge came from reading a mid-network layer rather than the final one, so a focused
+ablation over the layer at which the canonical and internal-state features are read --- on each
+model --- is likely to be more productive than adding further scalar features.
+
+A third direction is \emph{scale and calibration}. Re-running the ablation at the larger
+data scale used in the mid-term evaluation would test whether the small per-feature effects
+become reliable, and reporting calibration error and Brier score alongside AUROC would make the
+detectors more useful as decision-support tools, since a calibrated probability is worth more
+than a bare verdict.
+
+Finally, the finding that transfer is the hard part suggests studying the \emph{training
+distribution} itself: mixing a small amount of task-like data into the encyclopedia
+continuations, or generating continuations from more varied sources, may close part of the
+in-distribution-to-transfer gap that dominates the present results.
+
+\section{Closing remark}
+
+The modest headline of this work --- that inexpensive internal-state features are competitive
+but not decisive, and that cross-task transfer remains hard --- is, we think, more useful than a
+louder claim would have been. The detectors in this area are often reported under favourable,
+inconsistent conditions; holding everything fixed and running them on free hardware shows where
+the real difficulty lies. Making that difficulty visible, and reproducible, is the point.

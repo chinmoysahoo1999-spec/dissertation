@@ -1,0 +1,100 @@
+% =====================================================================
+\chapter{Full Result Tables}
+\label{app:tables}
+% =====================================================================
+
+This appendix gives the complete per-benchmark measurements behind the summary figures and
+tables of Chapter~\ref{ch:results}. All numbers are AUROC, read directly from the saved
+measurement files; $0.5$ is chance.
+
+Table~\ref{tab:app-gptj-full} is the full matrix for the six-billion-parameter model that
+anchors the study: every one of the sixteen configurations and six baselines, scored on the
+same rows of all ten benchmarks. It is the table from which the means in
+Section~\ref{sec:gptj} are computed, and it makes the per-benchmark spread --- in particular
+the dominance of the HaluEval-QA column --- explicit.
+
+\input{chapters/app_gptj_perdataset}
+
+Table~\ref{tab:app-opt-diag} is the file-backed diagnostic run for the second
+six-billion-class model. It covers twelve configurations on the original seven-benchmark
+suite at a small number of rows per benchmark; as noted in Chapter~\ref{ch:results}, these
+numbers are diagnostic rather than scientific, and the extended ten-benchmark run with
+baselines is awaiting archival.
+
+\input{chapters/app_opt_diag}
+
+% =====================================================================
+\chapter{Hyperparameters and Implementation Details}
+\label{app:hyper}
+% =====================================================================
+
+For reproducibility, this appendix records the settings used throughout. All runs use a
+fixed random seed of $42$.
+
+\section*{Data generation}
+\begin{itemize}[leftmargin=1.6em,itemsep=0.2em]
+\item Source text: encyclopedia articles; the first sentences are retained and a named
+entity occurring after the first sentence is selected.
+\item Faithful/hallucinated decision: the original entity's first token must appear among
+the model's top four predicted tokens to be labelled faithful.
+\item Generation cap during labelling: a short continuation of up to $48$ new tokens.
+\item Scale: one thousand examples per class (two thousand total) for the large models;
+smaller counts for the iteration and smoke models, as recorded in Chapter~\ref{ch:results}.
+\item Numeric format: bfloat16, with no further quantisation.
+\end{itemize}
+
+\section*{Classifier}
+\begin{itemize}[leftmargin=1.6em,itemsep=0.2em]
+\item Architecture: a five-layer perceptron with progressively narrowing hidden widths,
+rectified-linear activations, and a two-way softmax output.
+\item Loss and optimiser: cross-entropy; Adam with learning rate $5\times10^{-4}$ and weight
+decay $10^{-5}$.
+\item Batch size $32$; ten training epochs.
+\item Features standardised by a scaler fitted on the training split only.
+\item Split: $80\%$ train / $20\%$ test, identical across all configurations.
+\end{itemize}
+
+\section*{Evaluation}
+\begin{itemize}[leftmargin=1.6em,itemsep=0.2em]
+\item Each method --- configuration or baseline --- is scored on the same deterministic
+first-$N$ slice of each benchmark, with $N$ up to $350$ rows per benchmark in the unified
+runs.
+\item Metrics: AUROC (primary), accuracy, precision, recall, F1; calibration (Brier score,
+expected calibration error) where the measurement file records it.
+\item In-distribution and transfer numbers are never averaged together.
+\end{itemize}
+
+\section*{Baseline settings (six-billion model)}
+\begin{itemize}[leftmargin=1.6em,itemsep=0.2em]
+\item Supervised mid-layer probe: hidden state read at an intermediate layer (layer $17$ of
+$28$).
+\item Logit-lens divergence feature: early/late comparison taken at layer $14$.
+\item Spectral baseline: best layer and threshold selected on a validation split.
+\item Sampling-based score: a small number of stochastic samples per query, with a ridge
+term for numerical stability.
+\end{itemize}
+
+\section*{Hardware}
+\begin{itemize}[leftmargin=1.6em,itemsep=0.2em]
+\item Primary: a free cloud notebook with two sixteen-gigabyte T4 GPUs (thirty-two gigabytes
+combined), nine-hour session cap, thirty GPU-hours per week.
+\item Fallback: a free single-T4 notebook for the smaller models.
+\item The seven-billion models require both GPUs; a single sixteen-gigabyte card cannot hold
+a seven-billion model in bfloat16 together with generation memory.
+\end{itemize}
+
+% =====================================================================
+\chapter{Reproducibility Notes}
+\label{app:repro}
+% =====================================================================
+
+The study is designed to be reproducible on a free account. Three points are worth
+emphasising. First, the training data is generated separately for each model, because probes
+do not transfer between models; a detector is therefore always trained on data from the same
+model it monitors. Second, every configuration and baseline within a model shares the same
+generated data, the same train/test split and seed, and the same evaluation rows, so that
+differences in measured performance are attributable to the features rather than to incidental
+differences in setup. Third, the evaluation benchmarks are downloaded once and cached so that
+runs are not dependent on network conditions, and the per-benchmark row count is fixed so that
+cost stays within the free-tier budget. Where a model's measurement file is not yet archived,
+its numbers are marked as pending in Chapter~\ref{ch:results} rather than reported as results.

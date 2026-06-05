@@ -1,0 +1,45 @@
+% Hallucination Detection on OPT-6.7B: Proposed variants vs. SOTA baselines
+% Multi-task AUROC. Per-column ranking: red = best, green = 2nd, blue = 3rd.
+% Compile with: pdflatex opt_67b_variants_vs_baselines.tex
+\documentclass[10pt]{article}
+\usepackage[a4paper,landscape,margin=1.1cm]{geometry}
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\renewcommand{\arraystretch}{1.3}
+\setlength{\tabcolsep}{4.5pt}
+\begin{document}
+\pagestyle{empty}
+\begin{center}
+{\large\bfseries Hallucination Detection on OPT-6.7B: Proposed Variants vs.\ SOTA Baselines}\\[3pt]
+{\small Multi-task \textbf{AUROC} ($\uparrow$ higher is better)\,---\,500 samples per dataset (first-$N$), identical evaluation portion for every method}
+\end{center}
+\vspace{6pt}
+\begin{center}
+\footnotesize
+\begin{tabular}{l *{11}{c}}
+\toprule
+Method & TruthQA & TrivQA & CoQA & TydiQA & HE-QA & HE-Sum & HE-Dial & NQ & HotpotQA & PopQA & \textbf{Avg} \\
+\midrule
+\multicolumn{12}{l}{\itshape Proposed --- MIND+ internal-representation variants (this work)}\\
+M & 0.449 & \textcolor{red}{\textbf{0.585}} & \textcolor{red}{\textbf{0.550}} & 0.434 & 0.448 & 0.415 & 0.437 & \textcolor{blue}{0.521} & 0.446 & \textcolor{red}{\textbf{0.530}} & 0.482 \\
+N & \textcolor{blue}{0.587} & 0.525 & \textcolor{ForestGreen}{0.537} & 0.493 & \textcolor{red}{\textbf{0.878}} & 0.503 & \textcolor{red}{\textbf{0.554}} & 0.518 & 0.439 & 0.477 & \textcolor{red}{\textbf{0.551}} \\
+O & 0.515 & \textcolor{blue}{0.567} & 0.523 & \textcolor{red}{\textbf{0.528}} & \textcolor{blue}{0.764} & 0.383 & \textcolor{blue}{0.482} & 0.468 & 0.414 & \textcolor{blue}{0.488} & \textcolor{blue}{0.513} \\
+P & 0.388 & \textcolor{ForestGreen}{0.572} & \textcolor{blue}{0.536} & 0.479 & 0.521 & 0.439 & 0.430 & 0.407 & 0.428 & \textcolor{ForestGreen}{0.518} & 0.472 \\
+\midrule
+\multicolumn{12}{l}{\itshape SOTA baselines}\\
+SAPLMA & 0.488 & 0.478 & 0.489 & \textcolor{blue}{0.502} & \textcolor{ForestGreen}{0.787} & \textcolor{ForestGreen}{0.534} & 0.382 & \textcolor{ForestGreen}{0.553} & \textcolor{blue}{0.507} & 0.418 & \textcolor{ForestGreen}{0.514} \\
+HaloScope & \textcolor{red}{\textbf{0.665}} & 0.500 & 0.479 & 0.481 & 0.272 & 0.136 & 0.377 & 0.509 & \textcolor{red}{\textbf{0.541}} & 0.210 & 0.417 \\
+HalluShift & \textcolor{ForestGreen}{0.646} & 0.522 & 0.524 & \textcolor{ForestGreen}{0.522} & 0.465 & \textcolor{red}{\textbf{0.547}} & 0.464 & 0.509 & \textcolor{ForestGreen}{0.515} & 0.143 & 0.486 \\
+EigenScore & 0.504 & 0.519 & 0.520 & 0.407 & 0.500 & \textcolor{blue}{0.501} & \textcolor{ForestGreen}{0.499} & \textcolor{red}{\textbf{0.588}} & 0.444 & 0.071 & 0.455 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{10pt}
+{\footnotesize
+\textbf{Colour key (ranked within each column):} \textcolor{red}{\textbf{red = best}}, \quad\textcolor{ForestGreen}{green = 2nd best}, \quad\textcolor{blue}{blue = 3rd best}.\\[3pt]
+\textbf{Proposed variants:} \;M = embedding\,+\,URP\,+\,LTC;\quad N = embedding\,+\,CTS\,+\,EAR\,+\,PEA;\quad O = embedding\,+\,URP\,+\,LTC\,+\,CTS;\quad P = embedding\,+\,MIND+\,($D$,$V$,$H$)\,+\,all new features.\\[3pt]
+\textbf{Datasets:} \;TruthQA=TruthfulQA, TrivQA=TriviaQA, CoQA, TydiQA, HE-QA/HE-Sum/HE-Dial=HaluEval (QA/Summarisation/Dialogue), NQ=NQ-Open, HotpotQA, PopQA.\\[3pt]
+\textbf{Notes:} \;Backbone \texttt{facebook/opt-6.7b}. HaluEval columns score 1000 rows (500 prompts $\times$ right/wrong answer). Proposed-variant run logged 1 feature-extraction failure of 2000 records (negligible). Variant AUROCs from \texttt{kaggle\_opt\_67b\_all\_variants\_NEW\_results.json}; baselines transcribed from the Kaggle run console.
+}
+\end{document}

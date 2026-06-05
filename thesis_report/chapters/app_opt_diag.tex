@@ -1,0 +1,25 @@
+\begin{table}[h]
+\centering
+\caption{Diagnostic configuration run on the second six-billion-class model (OPT-6.7B), the part backed by a measurement file in the repository: twelve configurations on the original seven-benchmark suite at a small number of rows per benchmark. At this sample size the numbers are diagnostic, not scientific. AUROC; $0.5$ is chance.}
+\label{tab:app-opt-diag}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccccc|c}
+\toprule
+Cfg. & TruthQA & TrivQA & CoQA & TydiQA & HE-QA & HE-Sm & HE-Dl & Avg \\
+\midrule
+C1 canonical & 0.328 & 0.535 & 0.571 & 0.503 & 0.054 & 0.423 & 0.345 & 0.394 \\
+C2 {+}drift & 0.338 & 0.567 & 0.564 & 0.523 & 0.039 & 0.316 & 0.313 & 0.380 \\
+C3 {+}variance & 0.308 & 0.561 & 0.550 & 0.537 & 0.025 & 0.321 & 0.310 & 0.373 \\
+C4 {+}entropy & 0.303 & 0.539 & 0.556 & 0.542 & 0.126 & 0.342 & 0.336 & 0.392 \\
+C5 {+}trio & 0.276 & 0.485 & 0.502 & 0.492 & 0.228 & 0.380 & 0.342 & 0.386 \\
+C6 {+}lookback & 0.286 & 0.546 & 0.558 & 0.506 & 0.032 & 0.361 & 0.316 & 0.372 \\
+C7 {+}logit-lens & 0.313 & 0.527 & 0.542 & 0.514 & 0.026 & 0.336 & 0.309 & 0.367 \\
+C8 {+}margin & 0.308 & 0.528 & 0.559 & 0.516 & 0.037 & 0.335 & 0.313 & 0.371 \\
+C9 {+}l/l/m & 0.303 & 0.519 & 0.551 & 0.504 & 0.055 & 0.334 & 0.349 & 0.374 \\
+C10 {+}all lit. & 0.308 & 0.626 & 0.562 & 0.567 & 0.246 & 0.395 & 0.353 & 0.437 \\
+C11 {+}trio{+}llm & 0.328 & 0.553 & 0.551 & 0.538 & 0.049 & 0.286 & 0.302 & 0.373 \\
+C12 {+}trio{+}lit. & 0.293 & 0.528 & 0.554 & 0.498 & 0.020 & 0.352 & 0.318 & 0.366 \\
+\bottomrule
+\end{tabular}
+\end{table}

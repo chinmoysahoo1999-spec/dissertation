@@ -52,3 +52,25 @@ desktop.ini
 Code/llama32_checkpoint.json
 Code/llama32_train.json
 Code/llama32_test.json
+
+# --- 2026-06 additions ---
+# local notebook backups from the count-fix patch
+Code/**/*.bak_count_2026-06
+# stray figure-preview folder
+_preview/
+# large bundled eval data
+Code/eval_datasets/eval_datasets.zip
+# LaTeX build artefacts (keep .tex/.bib/.pdf/images)
+thesis_report/*.aux
+thesis_report/*.log
+thesis_report/*.out
+thesis_report/*.toc
+thesis_report/*.lof
+thesis_report/*.lot
+thesis_report/*.loa
+thesis_report/*.bbl
+thesis_report/*.blg
+thesis_report/*.fls
+thesis_report/*.fdb_latexmk
+thesis_report/*.synctex.gz
+thesis_report/build*.log

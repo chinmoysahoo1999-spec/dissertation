@@ -1,0 +1,128 @@
+% =====================================================================
+\chapter{Background}
+\label{ch:background}
+% =====================================================================
+
+This chapter sets out the minimum background needed to follow the rest of the
+dissertation. It explains how a transformer language model turns text into internal
+vectors, states precisely what we mean by a hallucination, frames detection as a
+classification problem, and defines the metrics used to score a detector. A reader
+already familiar with transformer internals and detection metrics can skim this chapter
+and move on to Chapter~\ref{ch:related}.
+
+\section{Transformer language models and their hidden states}
+
+Modern language models are built from the transformer architecture~\cite{vaswani2017attention}.
+The input text is first broken into \emph{tokens} --- sub-word units --- and each token
+is mapped to a vector. These vectors then pass through a stack of identical layers. Each
+layer mixes information between token positions using a mechanism called
+\emph{self-attention}, and then transforms each position independently through a small
+feed-forward network. The output of every layer is, again, one vector per token. We
+write $\zvec_\ell^{(t)}$ for the vector that layer $\ell$ produces at token position
+$t$, and we call it the \emph{activation} or \emph{hidden state} at that layer and
+position. A model with $L$ layers therefore produces a whole stack of activations
+$\zvec_1^{(t)}, \zvec_2^{(t)}, \dots, \zvec_L^{(t)}$ for each position it processes.
+
+After the final layer, the model multiplies the last activation by an output matrix to
+obtain a score for every possible next token, and a softmax turns these scores into a
+probability distribution $p_t(\cdot)$ over the vocabulary. The token with the highest
+probability is usually emitted, the text grows by one token, and the process repeats.
+Two facts about this picture matter for the rest of the dissertation. First, the entire
+stack of activations is computed anyway during normal generation, so anything we derive
+from it is essentially free. Second, the activations are high-dimensional --- a few
+thousand numbers per token for the models we study --- and they are believed to encode
+not only \emph{what} the model is saying but also something about \emph{how sure} and
+\emph{how grounded} it is. The central bet of internal-state detection is that this
+``something'' can be read out.
+
+The dimensionality of a model's hidden state, written $d$, and its number of layers $L$
+vary with model size. The models used in this dissertation range from a small diagnostic
+model with a few hundred million parameters up to seven-billion-parameter models; the
+six-billion-parameter model that anchors our results has $d = 4096$ and $L = 28$ layers.
+These sizes are reported in full in Chapter~\ref{ch:method}.
+
+\section{What counts as a hallucination}
+
+The word ``hallucination'' covers more than one phenomenon, and being careful about the
+distinctions avoids confusion later. Following the standard
+survey~\cite{ji2023survey}, we separate two axes.
+
+The first axis is \emph{intrinsic} versus \emph{extrinsic}. An intrinsic hallucination
+contradicts the material the model was given: a summary that reverses what an article
+actually said is intrinsic. An extrinsic hallucination adds content that cannot be
+checked against the given material --- it may happen to be true or false in the world,
+but it is unsupported by the input.
+
+The second axis is \emph{faithfulness} versus \emph{factuality}. Faithfulness asks
+whether the output is consistent with the prompt or source document; factuality asks
+whether it is consistent with the real world. A model can be faithful but not factual
+(it accurately reflects a flawed source) or factual but not faithful (it states a true
+fact the source never mentioned). Different benchmarks target different corners of this
+space, which is one reason a detector that does well on one benchmark may do poorly on
+another.
+
+A third consideration is \emph{granularity}: a hallucination label can be attached to a
+whole passage, to a sentence, or to an individual fact. Finer labels are more useful but
+harder to obtain. The approach we build on produces labels automatically at the level of
+a generated continuation, which sidesteps the cost of human annotation; the price is
+that the labels are only as good as the automatic procedure that creates them, a point
+we return to in Chapter~\ref{ch:method}.
+
+Throughout the dissertation we use the operational definition adopted by the method we
+extend: a hallucination is a coherent but factually incorrect span of generated text,
+where ``incorrect'' is judged against an external reference such as an encyclopedia
+article or a gold question--answer pair.
+
+\section{Detection as a classification problem}
+
+Once labels exist, detection becomes a supervised classification problem. For each
+generated example we form a feature vector $\mathbf{x}$ from the model's internal state,
+and we attach a binary label $y$, where $y=0$ marks a faithful generation and $y=1$
+marks a hallucinated one. A classifier is then trained to estimate
+$P(y = 1 \mid \mathbf{x})$. In this work the classifier is a multi-layer perceptron,
+abbreviated MLP: a feed-forward neural network of several layers that maps the feature
+vector to a probability. The detector's quality depends almost entirely on whether
+$\mathbf{x}$ carries the right information, which is why the design of the features ---
+the subject of Chapter~\ref{ch:method} --- is where the real work lies.
+
+A subtle but important point is the difference between two evaluation regimes. If the
+classifier is trained and tested on the same kind of text, we measure
+\emph{in-distribution} detection. If it is trained on one kind of text (encyclopedia
+continuations) and tested on another (question answering, summarisation, dialogue), we
+measure \emph{transfer}. Transfer is the harder and more realistic setting, and as
+Chapter~\ref{ch:results} shows, the two regimes can give very different numbers for the
+same detector. We never average across them.
+
+\section{How detection is measured}
+
+Because a detector outputs a probability, it can be scored either as a ranking or as a
+calibrated estimate. We use the following metrics, each defined here at first use.
+
+\textbf{AUROC.} The area under the receiver-operating-characteristic curve, abbreviated
+AUROC, measures how well the detector \emph{ranks} hallucinated examples above faithful
+ones. It equals the probability that a randomly chosen hallucinated example receives a
+higher score than a randomly chosen faithful one. A perfect detector scores $1.0$, and
+a detector that guesses scores $0.5$. AUROC is the headline metric in most of the
+internal-state literature because it does not depend on a particular decision threshold,
+and it is the metric we use for cross-method comparison.
+
+\textbf{Accuracy, precision, recall, F1.} These threshold-dependent metrics summarise
+the confusion matrix once a cut-off is chosen. Accuracy is the fraction of correct
+decisions; precision is the fraction of flagged examples that really were hallucinated;
+recall is the fraction of true hallucinations that were flagged; and F1 is the harmonic
+mean of precision and recall. They are useful but can be misleading when the two classes
+are imbalanced or when the classifier collapses to predicting a single class, a failure
+mode we observe at small data scales.
+
+\textbf{Brier score and ECE.} A detector is well \emph{calibrated} if a stated
+probability of, say, $0.8$ is right about $80\%$ of the time. The Brier score is the
+mean squared difference between the predicted probability and the true label; the
+expected calibration error, abbreviated ECE, bins predictions by confidence and measures
+how far the average confidence in each bin is from the observed accuracy. Lower is better
+for both. We report these where our measurement files contain them, because a calibrated
+probability is more useful in practice than a bare yes/no verdict.
+
+A final caution applies to all of these numbers. When a benchmark is small, a metric
+estimated on it is noisy, and a single easy or hard dataset can dominate an average
+computed over several benchmarks. We flag both effects explicitly when they occur in
+Chapter~\ref{ch:results}, rather than letting a headline average paper over them.
