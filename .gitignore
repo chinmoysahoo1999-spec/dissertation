@@ -74,3 +74,12 @@ thesis_report/*.fls
 thesis_report/*.fdb_latexmk
 thesis_report/*.synctex.gz
 thesis_report/build*.log
+
+# Reference papers, working notes, and helper scripts (kept locally, not tracked)
+/*.pdf
+/HANDOVER.md
+/PLAN.md
+/STATUS.md
+/RESEARCH_DIRECTIONS_*.md
+/commit_updates.*
+/cleanup_repo.bat
